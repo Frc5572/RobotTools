@@ -1,7 +1,9 @@
 
 plugins {
     id 'java-library'
+    id 'maven-publish'
 }
+
 tasks.withType(JavaCompile) {
     options.compilerArgs << '--add-exports' << 'jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED'
     options.compilerArgs << '--add-exports' << 'jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED'
@@ -23,5 +25,18 @@ repositories {
 }
 
 dependencies {
-    
+    implementation 'fr.inria.gforge.spoon:spoon-core:10.4.2'
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            // Use jitpack format for publishing to mavenLocal
+            groupId = 'com.github.Frc5572'
+            artifactId = 'RobotTools'
+            version = 'main-SNAPSHOT'
+
+            from components.java
+        }
+    }
 }

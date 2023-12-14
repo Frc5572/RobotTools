@@ -1,4 +1,4 @@
-See [sample.csv] for stage information for compiling [FRC2023].
+See [sample.csv](../sample.csv) for stage information for compiling [FRC2023](https://github.com/Frc5572/FRC2023).
 
 ## `COMPILATION`
 

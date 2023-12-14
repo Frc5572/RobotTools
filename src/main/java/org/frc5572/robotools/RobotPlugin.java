@@ -1,9 +1,7 @@
 package org.frc5572.robotools;
 
-import javax.lang.model.util.Types;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.Plugin;
-import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.Trees;
@@ -21,22 +19,46 @@ public class RobotPlugin implements Plugin {
         return "rchk";
     }
 
+    void printData(JavacTask task, TaskEvent e) {
+                System.out.print(e.getKind());
+                System.out.print(',');
+                if(e.getSourceFile() != null) {
+                    System.out.print(e.getSourceFile().getName());
+                }
+                System.out.print(',');
+                if(e.getCompilationUnit() != null) {
+                    System.out.print("TRUE");
+                } else {
+                    System.out.print("FALSE");
+                }
+                System.out.print(',');
+                if(e.getTypeElement() != null) {
+                    System.out.print("TRUE");
+                } else {
+                    System.out.print("FALSE");
+                }
+                System.out.print(',');
+                if(Trees.instance(task).getPath(e.getTypeElement()) != null) {
+                    System.out.print("TRUE");
+                } else {
+                    System.out.print("FALSE");
+                }
+    }
+
     /**
      * Function run when loaded
      */
     @Override
     public void init(JavacTask task, String... arg1) {
-        Types types = task.getTypes();
-        Trees trees = Trees.instance(task);
-        SourcePositions positions = trees.getSourcePositions();
         task.addTaskListener(new TaskListener() {
             @Override
-            public void finished(TaskEvent event) {
-                if (event.getKind() == TaskEvent.Kind.ANALYZE) {
-                    CompilationData data = new CompilationData(types, trees, positions,
-                        event.getCompilationUnit(), event.getTypeElement(), null);
-                    Checks.process(data);
-                }
+            public void started(TaskEvent e) {
+                
+            }
+
+            @Override
+            public void finished(TaskEvent e) {
+                
             }
         });
     }

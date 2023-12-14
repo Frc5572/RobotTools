@@ -278,7 +278,6 @@ FINISH,ENTER,C:\Users\wpwatson\dev\FRC2023\src\main\java\frc\robot\subsystems\LE
 FINISH,ENTER,C:\Users\wpwatson\dev\FRC2023\src\main\java\frc\robot\subsystems\Swerve.java,TRUE,FALSE,FALSE
 FINISH,ENTER,C:\Users\wpwatson\dev\FRC2023\src\main\java\frc\robot\subsystems\WristIntake.java,TRUE,FALSE,FALSE
 START,ANNOTATION_PROCESSING_ROUND,,FALSE,FALSE,FALSE
-process
 FINISH,ANNOTATION_PROCESSING_ROUND,,FALSE,FALSE,FALSE
 START,ENTER,C:\Users\wpwatson\dev\FRC2023\src\main\java\frc\lib\math\AngledElevatorFeedForward.java,TRUE,FALSE,FALSE
 START,ENTER,C:\Users\wpwatson\dev\FRC2023\src\main\java\frc\lib\math\ArmFeedForwardTunable.java,TRUE,FALSE,FALSE
@@ -419,7 +418,6 @@ FINISH,ENTER,C:\Users\wpwatson\dev\FRC2023\src\main\java\frc\robot\subsystems\LE
 FINISH,ENTER,C:\Users\wpwatson\dev\FRC2023\src\main\java\frc\robot\subsystems\Swerve.java,TRUE,FALSE,FALSE
 FINISH,ENTER,C:\Users\wpwatson\dev\FRC2023\src\main\java\frc\robot\subsystems\WristIntake.java,TRUE,FALSE,FALSE
 START,ANNOTATION_PROCESSING_ROUND,,FALSE,FALSE,FALSE
-process
 FINISH,ANNOTATION_PROCESSING_ROUND,,FALSE,FALSE,FALSE
 START,ENTER,C:\Users\wpwatson\dev\FRC2023\src\main\java\frc\lib\math\AngledElevatorFeedForward.java,TRUE,FALSE,FALSE
 START,ENTER,C:\Users\wpwatson\dev\FRC2023\src\main\java\frc\lib\math\ArmFeedForwardTunable.java,TRUE,FALSE,FALSE

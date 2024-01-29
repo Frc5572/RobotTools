@@ -6,8 +6,7 @@ permissions:
   contents: write
 jobs:
   gen_io_types:
-    runs-on: ubuntu-22.04
-    container: wpilib/roborio-cross-ubuntu:2023-22.04
+    runs-on: ubuntu-latest
     env:
       # This line prevents the action from running after an automated push.
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -16,9 +15,6 @@ jobs:
       - uses: actions/checkout@v3
       # Install Rust
       - uses: dtolnay/rust-toolchain@stable
-      # Install OpenSSL
-      - name: Install OpenSSL
-        run: sudo apt-get update && sudo apt-get install libssl-dev
       # Generate IOTypes.java
       - name: Run gen_io_types
         working-directory: gen_io_types

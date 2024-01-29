@@ -1,0 +1,17 @@
+name: Push commit
+on: push
+permissions:
+  contents: write
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Create report file
+        run: date +%s > report.txt
+      - name: Commit report
+        run: |
+          git commit -am "Automated report"
+          git push

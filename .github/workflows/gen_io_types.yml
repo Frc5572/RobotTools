@@ -9,12 +9,14 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v3
-      - name: Create report file
-        run: date +%s > report.txt
-      - name: Commit report
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Run gen_io_types
+        working-directory: gen_io_types
+        run: cargo run
+      - name: Commit IOTypes
         run: |
           git config --global user.name 'Action'
           git config --global user.email 'wilsonwatson@users.noreply.github.com'
-          git add report.txt
-          git commit -am "Automated report"
+          git add -f src/main/java/org/frc5572/robotools/IOTypes.java
+          git commit -m "Generate IOTypes.java"
           git push

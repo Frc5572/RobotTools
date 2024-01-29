@@ -1,6 +1,5 @@
 jdk:
-  - openjdk22
+  - openjdk17
 before_install:
-   - sdk update
-   - sdk install java 22.ea.33-open
-   - sdk use java 22.ea.33-open
+   - sdk install java 17.0.1-open
+   - sdk use java 17.0.1-open

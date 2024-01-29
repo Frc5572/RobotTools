@@ -3,7 +3,7 @@ on: push
 permissions:
   contents: write
 jobs:
-  report:
+  gen_io_types:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

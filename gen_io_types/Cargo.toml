@@ -1,0 +1,14 @@
+[package]
+name = "gen_io_types"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+vendordeps = { git = "https://github.com/wilsonwatson/vendordeps.git" }
+binrw = "0.13"
+zip = "0.6"
+tokio = { version = "1", features = ["full"] }
+tempfile = "3.9"
+serde_json = "1"

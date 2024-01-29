@@ -1,0 +1,82 @@
+name: CI
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  gen_io_types:
+    runs-on: ubuntu-latest
+    env:
+      # This line prevents the action from running after an automated push.
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      # Check out push
+      - uses: actions/checkout@v3
+      # Install Rust
+      - uses: dtolnay/rust-toolchain@stable
+      # Generate IOTypes.java
+      - name: Run gen_io_types
+        working-directory: gen_io_types
+        run: cargo run
+      - name: Install openjdk17
+        run: sudo apt-get install openjdk-17-jdk
+      # Grant execute permission for gradlew
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      # Runs a single command using the runners shell
+      - name: Compile and run tests on robot code
+        run: ./gradlew build
+      # Commit and push new type
+      - name: Commit IOTypes
+        run: |
+          git config --global user.name 'Action'
+          git config --global user.email 'wilsonwatson@users.noreply.github.com'
+          git add -f src/main/java/org/frc5572/robotools/IOTypes.java
+          git commit -m "Generate IOTypes.java" || true
+          git push
+  linting:
+    name: Linting
+    runs-on: ubuntu-latest
+    env:
+      # This line prevents the action from running after an automated push.
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3 # v2 minimum required
+      - name: Run check style
+        uses: nikitasavinov/checkstyle-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: 'github-check'
+          tool_name: 'testtool'
+          fail_on_error: true
+          filter_mode: nofilter
+          level: error
+          checkstyle_config: checks.xml
+          checkstyle_version: '9.2.1'
+  spell_check:
+    name: Spell Check
+    runs-on: ubuntu-latest
+    env:
+      # This line prevents the action from running after an automated push.
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3 # v2 minimum required
+      - name: Run Spell Check
+        uses: codespell-project/actions-codespell@master
+        with:
+          check_filenames: true
+  merge_conflict_job:
+    runs-on: ubuntu-latest
+    name: Find merge conflicts
+    env:
+      # This line prevents the action from running after an automated push.
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      # Checkout the source code so there are some files to look at.
+      - uses: actions/checkout@v3
+      # Run the actual merge conflict finder
+      - name: Merge Conflict finder
+        uses: olivernybroe/action-conflict-finder@v4.0

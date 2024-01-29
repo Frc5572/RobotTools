@@ -19,6 +19,8 @@ jobs:
       - name: Run gen_io_types
         working-directory: gen_io_types
         run: cargo run
+      - name: Install openjdk17
+        run: sudo apt-get install openjdk-17-jdk
       # Grant execute permission for gradlew
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew

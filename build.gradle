@@ -17,15 +17,15 @@ tasks.withType(JavaCompile) {
     options.compilerArgs << '--add-exports' << 'jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED'
 }
 
-sourceCompatibility = JavaVersion.VERSION_11
-targetCompatibility = JavaVersion.VERSION_11
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation 'fr.inria.gforge.spoon:spoon-core:10.4.2'
+    
 }
 
 publishing {

@@ -18,7 +18,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       # Install OpenSSL
       - name: Install OpenSSL
-        run: sudo apt-get install libssl-dev
+        run: sudo apt-get update && sudo apt-get install libssl-dev
       # Generate IOTypes.java
       - name: Run gen_io_types
         working-directory: gen_io_types

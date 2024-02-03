@@ -30,7 +30,6 @@ public class IOTypes {
     };
     /** List of classes disallowed a direct path to Robot.java. */
     public static String[] ioClasses = {
-        "edu.wpi.first.wpilibj.AddressableLED",
         "edu.wpi.first.wpilibj.AnalogEncoder",
         "edu.wpi.first.wpilibj.AnalogGyro",
         "edu.wpi.first.wpilibj.AnalogInput",

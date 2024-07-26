@@ -1,9 +1,15 @@
 jdk:
   - openjdk17
 before_install:
+   # Java
    - sdk install java 17.0.1-open
    - sdk use java 17.0.1-open
+   # GCC
+   - wget https://github.com/xpack-dev-tools/gcc-xpack/releases/download/v13.3.0-1/xpack-gcc-13.3.0-1-linux-x64.tar.gz
+   - tar xvf xpack-gcc-13.3.0-1-linux-x64.tar.gz
+   # MinGW
    - wget https://github.com/xpack-dev-tools/mingw-w64-gcc-xpack/releases/download/v13.3.0-1/xpack-mingw-w64-gcc-13.3.0-1-linux-x64.tar.gz
    - tar xvf xpack-mingw-w64-gcc-13.3.0-1-linux-x64.tar.gz
+   # Rust
    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y
    - $HOME/.cargo/bin/rustup target add x86_64-pc-windows-gnu

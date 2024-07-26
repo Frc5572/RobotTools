@@ -30,7 +30,13 @@ dependencies {
     implementation 'org.apache.commons:commons-lang3:3.15.0'
 }
 
+task printEverything(type: Exec) {
+    workingDir '/home/jitpack'
+    commandLine 'find', '.'
+}
+
 task buildRustWindows(type: Exec) {
+    dependsOn('printEverything')
     environment 'PATH', System.getenv('PATH') + ":/home/jitpack/xpack-mingw-w64-gcc-13.3.0-1/bin"
     commandLine System.properties['user.home'] + '/.cargo/bin/cargo', 'build', '--target', 'x86_64-pc-windows-gnu', '--release'
 }

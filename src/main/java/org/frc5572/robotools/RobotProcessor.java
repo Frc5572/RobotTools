@@ -17,10 +17,13 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.tools.JavaFileManager;
+import javax.tools.StandardLocation;
 
 import org.apache.commons.lang3.SystemUtils;
 
 import com.sun.source.util.Trees;
+import com.sun.tools.javac.file.Locations;
 
 /**
  * Annotation processor for checks. Used by VS Code.
@@ -73,6 +76,8 @@ public class RobotProcessor extends AbstractProcessor {
                             p = p.getParent().getParent().getParent().getParent();
                             String generated = run(p.toString());
                             try {
+                                var raw = processingEnv.getFiler().getResource(StandardLocation.ANNOTATION_PROCESSOR_PATH, "", "test.txt");
+                                
                                 var file = processingEnv.getFiler().createSourceFile("org.frc5572.Generated");
                                 try(var writer = file.openWriter()) {
                                     writer.write(generated);

@@ -17,15 +17,51 @@ tasks.withType(JavaCompile) {
     options.compilerArgs << '--add-exports' << 'jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED'
 }
 
-// sourceCompatibility = JavaVersion.VERSION_17
-// targetCompatibility = JavaVersion.VERSION_17
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    
+    implementation 'org.apache.commons:commons-lang3:3.15.0'
+}
+
+task buildRustWindows(type: Exec) {
+    commandLine System.properties['user.home'] + '/.cargo/bin/cargo', 'build', '--target', 'x86_64-pc-windows-gnu', '--release'
+}
+
+task buildRustLinux(type: Exec) {
+    commandLine System.properties['user.home'] + '/.cargo/bin/cargo', 'build', '--target', 'x86_64-unknown-linux-gnu'
+}
+
+task buildRust {
+    dependsOn('buildRustWindows')
+    dependsOn('buildRustLinux')
+}
+
+task copyRustWindows(type: Copy) {
+    dependsOn('buildRustWindows')
+    from 'target/x86_64-pc-windows-gnu/release/robot_tools.dll'
+    into 'src/main/resources'
+}
+
+task copyRustLinux(type: Copy) {
+    dependsOn('buildRustLinux')
+    from 'target/x86_64-unknown-linux-gnu/debug/librobot_tools.so'
+    into 'src/main/resources'
+}
+
+task copyRust {
+    dependsOn('copyRustWindows')
+    dependsOn('copyRustLinux')
+}
+
+tasks.named('processResources') {
+    dependsOn('copyRust')
 }
 
 publishing {
@@ -34,7 +70,7 @@ publishing {
             // Use jitpack format for publishing to mavenLocal
             groupId = 'com.github.Frc5572'
             artifactId = 'RobotTools'
-            version = 'main-SNAPSHOT'
+            version = 'test'
 
             from components.java
         }

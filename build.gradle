@@ -37,7 +37,7 @@ task printEverything(type: Exec) {
 
 task buildRustWindows(type: Exec) {
     dependsOn('printEverything')
-    environment 'PATH', System.getenv('PATH') + ":/home/jitpack/xpack-mingw-w64-gcc-13.3.0-1/bin"
+    environment 'PATH', System.getenv('PATH') + ":/home/jitpack/build/xpack-mingw-w64-gcc-13.3.0-1/bin"
     commandLine System.properties['user.home'] + '/.cargo/bin/cargo', 'build', '--target', 'x86_64-pc-windows-gnu', '--release'
 }
 

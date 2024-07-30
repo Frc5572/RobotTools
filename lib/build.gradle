@@ -1,0 +1,38 @@
+
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id "org.jetbrains.kotlin.jvm" version "2.0.0"
+}
+
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'it.unimi.dsi:fastutil:8.5.14'
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            // Use jitpack format for publishing to mavenLocal
+            groupId = 'com.github.Frc5572'
+            artifactId = 'RobotTools'
+            version = 'main-SNAPSHOT'
+
+            from components.java
+        }
+    }
+}
+
+kotlin {
+    jvmToolchain(17)
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile.class).configureEach {
+    jvmTargetValidationMode = org.jetbrains.kotlin.gradle.dsl.jvm.JvmTargetValidationMode.WARNING
+}

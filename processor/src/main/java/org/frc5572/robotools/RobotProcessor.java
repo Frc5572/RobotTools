@@ -53,12 +53,10 @@ public class RobotProcessor extends AbstractProcessor {
                 continue;
             }
             for (Element element : mod.getEnclosedElements()) {
-                if (element instanceof PackageElement) {
-                    PackageElement packageElement = (PackageElement) element;
+                if (element instanceof PackageElement packageElement) {
                     if (packageElement.getQualifiedName().toString().startsWith("frc.")) {
                         for (Element element2 : packageElement.getEnclosedElements()) {
-                            if (element2 instanceof TypeElement) {
-                                TypeElement typeElement = (TypeElement) element2;
+                            if (element2 instanceof TypeElement typeElement) {
                                 fatal = fatal || processTypeElement(typeElement);
                             }
                         }

@@ -33,7 +33,7 @@ public final class ValidatingProfiler implements ReadableProfiler {
     @Override
     public void startTick() {
         if(this.tickStarted) {
-            // TODO error: Profiler tick already started - missing endTick()?
+            throw new RuntimeException("Profiler tick already started. Missing endTick()?");
         } else {
             tickStarted = true;
             pathLen = 0;
@@ -45,20 +45,19 @@ public final class ValidatingProfiler implements ReadableProfiler {
     @Override
     public void endTick() {
         if(!this.tickStarted) {
-            // TODO error: Profiler tick already ended - missing startTick()?
+            throw new RuntimeException("Profiler tick already ended. Missing startTick()?");
         } else {
             this.pop();
             this.tickStarted = false;
             if(!this.fullPathEmpty) {
-                // TODO error: Profiler tick ended before path was fully popped (remainder: '{}'). Mismatched push/pop?
-            }
+                throw new RuntimeException("Profiler tick ended before path was fully popped. Mismatched push/pop?");            }
         }
     }
 
     @Override
     public void push(String location) {
         if(!this.tickStarted) {
-            // TODO error: Cannot push '{}' to profiler if profiler tick hasn't started - missing startTick()?
+            throw new RuntimeException("Cannot push '" + location + "' to the profiler if profiler tick hasn't started. Missing startTick()?");
         } else {
             fullPathEmpty = false;
             pathLen += 1;
@@ -73,9 +72,9 @@ public final class ValidatingProfiler implements ReadableProfiler {
     @Override
     public void pop() {
         if(!this.tickStarted) {
-            // TODO error: Cannot pop from profiler if profiler tick hasn't started - missing startTick()?
+            throw new RuntimeException("Cannot pop from profiler if profiler tick hasn't started. Missing startTick()?");
         } else if(pathLen == 0) {
-            // TODO error: Tried to pop one too many times! Mismatched push() and pop()?
+            throw new RuntimeException("Tried to pop one too many times! Mismatched push() and pop()?");
         } else {
             pathLen -= 1;
         }

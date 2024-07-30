@@ -1,9 +1,7 @@
 package org.frc5572.util.profiler;
 
-import it.unimi.dsi.fastutil.Pair;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Set;
 import java.util.function.Supplier;
 
 public final class EmptyProfiler implements ReadableProfiler {

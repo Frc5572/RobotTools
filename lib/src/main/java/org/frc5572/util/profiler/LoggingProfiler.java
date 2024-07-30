@@ -1,14 +1,15 @@
 package org.frc5572.util.profiler;
 
-import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongMaps;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.*;
 import java.util.function.IntSupplier;
 import java.util.function.LongSupplier;
@@ -60,13 +61,28 @@ public final class LoggingProfiler implements ReadableProfiler {
 
     @Override
     public void save() {
-
+        try {
+            try(var outStream = new PrintStream(new FileOutputStream(filePath))) {
+                outStream.println("Performance Log\n================================================================================");
+                for(var entry : locationInfos.entrySet()) {
+                    var info = entry.getValue();
+                    outStream.println(entry.getKey().replace(SPLIT_CHAR, '.'));
+                    outStream.println("    visitCount: " + info.getVisitCount());
+                    outStream.println("    totalTime: " + info.getTotalTime());
+                    outStream.println("    maxTime: " + info.getMaxTime());
+                    outStream.println("    minTime: " + info.minTime);
+                    outStream.println("    avgTime: " + info.getTotalTime() / info.getVisitCount());
+                }
+            }
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void startTick() {
         if(this.tickStarted) {
-            // TODO error: Profiler tick already started - missing endTick()?
+            throw new RuntimeException("Profiler tick already started. Missing endTick()?");
         } else {
             this.tickStarted = true;
             this.fullPath = "";
@@ -78,12 +94,12 @@ public final class LoggingProfiler implements ReadableProfiler {
     @Override
     public void endTick() {
         if(!this.tickStarted) {
-            // TODO error: Profiler tick already ended - missing startTick()?
+            throw new RuntimeException("Profiler tick already ended. Missing startTick()?");
         } else {
             this.pop();
             this.tickStarted = false;
             if(!this.fullPath.isEmpty()) {
-                // TODO error: Profiler tick ended before path was fully popped (remainder: '{}'). Mismatched push/pop?
+                throw new RuntimeException("Profiler tick ended before path was fully popped. Mismatched push/pop?");
             }
         }
     }
@@ -91,7 +107,7 @@ public final class LoggingProfiler implements ReadableProfiler {
     @Override
     public void push(String location) {
         if(!this.tickStarted) {
-            // TODO error: Cannot push '{}' to profiler if profiler tick hasn't started - missing startTick()?
+            throw new RuntimeException("Cannot push '" + location + "' to the profiler if profiler tick hasn't started. Missing startTick()?");
         } else {
             if(!this.fullPath.isEmpty()) {
                 this.fullPath = this.fullPath + SPLIT_CHAR;
@@ -111,9 +127,9 @@ public final class LoggingProfiler implements ReadableProfiler {
     @Override
     public void pop() {
         if(!this.tickStarted) {
-            // TODO error: Cannot pop from profiler if profiler tick hasn't started - missing startTick()?
+            throw new RuntimeException("Cannot pop from profiler if profiler tick hasn't started. Missing startTick()?");
         } else if(this.timeList.isEmpty()) {
-            // TODO error: Tried to pop one too many times! Mismatched push() and pop()?
+            throw new RuntimeException("Tried to pop one too many times! Mismatched push() and pop()?");
         } else {
             this.path.remove(this.path.size() - 1);
 

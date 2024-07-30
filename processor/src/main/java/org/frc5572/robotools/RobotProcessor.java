@@ -1,11 +1,12 @@
 package org.frc5572.robotools;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedOptions;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
@@ -13,23 +14,15 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
+import org.frc5572.robotools.autoprofile.AutoProfileProcessor;
+import org.frc5572.robotools.serde.SerdeProcessor;
+
 /**
- * Annotation processor for checks. Used by VS Code.
+ * Annotation processor for RobotTools.
  */
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
-@SupportedOptions("frc_check.skip")
+@SupportedSourceVersion(SourceVersion.RELEASE_17)
 public class RobotProcessor extends AbstractProcessor {
-
-    private boolean processTypeElement(TypeElement typeElement) {
-        for (Element e3 : typeElement.getEnclosedElements()) {
-            if (e3 instanceof TypeElement) {
-                processTypeElement((TypeElement) e3);
-            }
-        }
-        CompilationData data = new CompilationData(processingEnv, typeElement);
-        return Checks.process(data);
-    }
 
     private boolean hasProcessed;
 
@@ -47,26 +40,25 @@ public class RobotProcessor extends AbstractProcessor {
             return false;
         }
         hasProcessed = true;
-        boolean fatal = false;
+        List<TypeElement> typeElements = new ArrayList<>();
         for (ModuleElement mod : processingEnv.getElementUtils().getAllModuleElements()) {
             if (!mod.isUnnamed()) {
                 continue;
             }
             for (Element element : mod.getEnclosedElements()) {
                 if (element instanceof PackageElement packageElement) {
-                    if (packageElement.getQualifiedName().toString().startsWith("frc.")) {
-                        for (Element element2 : packageElement.getEnclosedElements()) {
-                            if (element2 instanceof TypeElement typeElement) {
-                                fatal = fatal || processTypeElement(typeElement);
-                            }
+                    for (Element element2 : packageElement.getEnclosedElements()) {
+                        if (element2 instanceof TypeElement typeElement) {
+                            typeElements.add(typeElement);
                         }
                     }
+
                 }
             }
         }
-        if (fatal) {
-            throw new RuntimeException("Checks failed!");
-        }
+        CompilationData compilationData = new CompilationData(typeElements, processingEnv);
+        SerdeProcessor.processTypes(compilationData);
+        AutoProfileProcessor.processTypes(compilationData);
         return false;
     }
 

@@ -3,7 +3,6 @@ package org.frc5572.util.profiler;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongMaps;
 
-import java.nio.file.Path;
 import java.util.*;
 
 public final class ProfileResultImpl implements ProfileResult {

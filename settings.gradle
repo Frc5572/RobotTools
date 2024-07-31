@@ -4,5 +4,6 @@ plugins {
 }
 
 rootProject.name = 'robot-tools'
+include('plugin')
 include('processor')
 include('lib')

@@ -89,7 +89,7 @@ async fn main() {
         }
     }
 
-    let mut outf = std::fs::File::create(source_dir.join("src/main/java/org/frc5572/robotools/IOTypes.java")).unwrap();
+    let mut outf = std::fs::File::create(source_dir.join("processor/src/main/java/org/frc5572/robotools/IOTypes.java")).unwrap();
     writeln!(&mut outf, "package org.frc5572.robotools;\n").unwrap();
     writeln!(&mut outf, "/** Auto-generated list of IO interfaces and classes. */").unwrap();
     writeln!(&mut outf, "public class IOTypes {{\n").unwrap();

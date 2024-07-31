@@ -1,0 +1,29 @@
+plugins {
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.10'
+}
+
+group = "com.github.Frc5572"
+var githubProjectName = "RobotTools"
+
+repositories {
+    mavenCentral()
+}
+
+gradlePlugin {
+    plugins {
+        register("ffstMixin") {
+            id = "$group.$githubProjectName"
+            implementationClass = 'org.frc5572.mixin.MixinPlugin'
+        }
+    }
+}
+
+kotlin {
+    jvmToolchain(17)
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile.class).configureEach {
+    jvmTargetValidationMode = org.jetbrains.kotlin.gradle.dsl.jvm.JvmTargetValidationMode.WARNING
+}

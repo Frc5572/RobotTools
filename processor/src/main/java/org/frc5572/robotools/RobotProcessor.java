@@ -57,8 +57,8 @@ public class RobotProcessor extends AbstractProcessor {
             }
         }
         CompilationData compilationData = new CompilationData(typeElements, processingEnv);
-        SerdeProcessor.processTypes(compilationData);
-        AutoProfileProcessor.processTypes(compilationData);
+//        SerdeProcessor.processTypes(compilationData);
+//        AutoProfileProcessor.processTypes(compilationData);
         return false;
     }
 

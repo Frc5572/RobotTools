@@ -10,8 +10,8 @@ public final class Profiling {
 
     private static ReadableProfiler instance = EmptyProfiler.INSTANCE;
 
-    public static void setLoggingProfiler(String path, LongSupplier timeGetter, IntSupplier tickGetter) {
-        instance = new LoggingProfiler(path, timeGetter, tickGetter);
+    public static void setLoggingProfiler(String path, LongSupplier timeGetter, IntSupplier tickGetter, double timeDivisor, ProfileLoggingFormat format) {
+        instance = new LoggingProfiler(path, timeGetter, tickGetter, timeDivisor, format);
     }
 
     public static void setEmptyProfiler() {

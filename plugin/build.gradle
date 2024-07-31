@@ -1,7 +1,6 @@
 plugins {
     id 'java-gradle-plugin'
     id 'maven-publish'
-    id 'org.jetbrains.kotlin.jvm' version '1.9.10'
 }
 
 group = "com.github.Frc5572"
@@ -11,19 +10,20 @@ repositories {
     mavenCentral()
 }
 
+dependencies {
+    implementation 'org.ow2.asm:asm:9.7'
+    implementation 'org.ow2.asm:asm-util:9.7'
+    implementation 'org.ow2.asm:asm-tree:9.7'
+    implementation 'it.unimi.dsi:fastutil:8.5.14'
+
+    implementation project(":lib")
+}
+
 gradlePlugin {
     plugins {
         register("ffstMixin") {
             id = "$group.$githubProjectName"
-            implementationClass = 'org.frc5572.mixin.MixinPlugin'
+            implementationClass = 'org.frc5572.plugin.MainPlugin'
         }
     }
-}
-
-kotlin {
-    jvmToolchain(17)
-}
-
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile.class).configureEach {
-    jvmTargetValidationMode = org.jetbrains.kotlin.gradle.dsl.jvm.JvmTargetValidationMode.WARNING
 }

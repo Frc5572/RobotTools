@@ -9,11 +9,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.*;
 import java.util.function.IntSupplier;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.frc5572.util.profiler.ProfileResult.SPLIT_CHAR;
 
@@ -40,12 +40,18 @@ public final class LoggingProfiler implements ReadableProfiler {
 
     private final String filePath;
 
-    public LoggingProfiler(String filePath, LongSupplier timeGetter, IntSupplier tickGetter) {
+    private final double timeDivisor;
+
+    private final ProfileLoggingFormat loggingFormat;
+
+    public LoggingProfiler(String filePath, LongSupplier timeGetter, IntSupplier tickGetter, double timeDivisor, ProfileLoggingFormat loggingFormat) {
         this.filePath = filePath;
         this.startTime = timeGetter.getAsLong();
         this.timeGetter = timeGetter;
         this.startTick = tickGetter.getAsInt();
         this.endTickGetter = tickGetter;
+        this.timeDivisor = timeDivisor;
+        this.loggingFormat = loggingFormat;
     }
 
     @Override
@@ -62,16 +68,19 @@ public final class LoggingProfiler implements ReadableProfiler {
     @Override
     public void save() {
         try {
-            try(var outStream = new PrintStream(new FileOutputStream(filePath))) {
-                outStream.println("Performance Log\n================================================================================");
-                for(var entry : locationInfos.entrySet()) {
+            try(var outStream = new FileOutputStream(filePath)) {
+                for(var entry : locationInfos.entrySet().stream().sorted((a, b) -> {
+                    return loggingFormat.compare(a.getKey(), a.getValue(), b.getKey(), b.getValue());
+                }).collect(Collectors.toList())) {
                     var info = entry.getValue();
-                    outStream.println(entry.getKey().replace(SPLIT_CHAR, '.'));
-                    outStream.println("    visitCount: " + info.getVisitCount());
-                    outStream.println("    totalTime: " + info.getTotalTime());
-                    outStream.println("    maxTime: " + info.getMaxTime());
-                    outStream.println("    minTime: " + info.minTime);
-                    outStream.println("    avgTime: " + info.getTotalTime() / info.getVisitCount());
+                    var name = entry.getKey().replace(SPLIT_CHAR, '.');
+                    loggingFormat.write(name, info, timeDivisor, outStream);
+                    // outStream.println();
+                    // outStream.println("    visitCount: " + info.getVisitCount());
+                    // outStream.println("    totalTime: " + info.getTotalTime() / timeDivisor);
+                    // outStream.println("    maxTime: " + info.getMaxTime() / timeDivisor);
+                    // outStream.println("    minTime: " + info.minTime / timeDivisor);
+                    // outStream.println("    avgTime: " + info.getTotalTime() / info.getVisitCount() / timeDivisor);
                 }
             }
         } catch(IOException e) {

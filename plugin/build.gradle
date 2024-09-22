@@ -1,0 +1,21 @@
+plugins {
+    id 'java-gradle-plugin'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+}
+
+gradlePlugin {
+    plugins {
+        robottools {
+            id = "org.github.Frc5572.plugin"
+            implementationClass = "org.frc5572.gradle.RobotToolPlugin"
+            displayName = "Robot Tools"
+        }
+    }
+}

@@ -162,4 +162,4 @@ bin/
 # Simulation GUI and other tools window save file
 *-window.json
 
-/src/main/java/org/frc5572/robotools/IOTypes.java
+*/build

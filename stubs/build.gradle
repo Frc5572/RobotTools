@@ -1,0 +1,17 @@
+
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.ow2.asm:asm:9.7'
+}
+
+task(generateStubs, type: JavaExec) {
+    mainClass = "org.frc5572.GenerateStubs"
+    classpath = sourceSets.main.runtimeClasspath
+}

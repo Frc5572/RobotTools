@@ -1,8 +1,8 @@
 package org.frc5572;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,6 +14,8 @@ import java.util.stream.Stream;
 import org.objectweb.asm.ClassReader;
 
 public class GenerateStubs {
+
+    private static final File outDir = new File("src/generated/java");
 
     private static void printParts(Stream<Path> p) throws IOException {
         var paths = p.iterator();
@@ -27,15 +29,15 @@ public class GenerateStubs {
                 ClassReader reader = new ClassReader(data);
                 int dolla = reader.getClassName().indexOf('$');
                 if(dolla != -1) {
-                    String className = reader.getClassName().substring(0, dolla) + ".class";
+                    String className = reader.getClassName().substring(0, dolla);
                     if(!classes.containsKey(className)) {
-                        classes.put(className, new ClassStub(className));
+                        classes.put(className, new ClassStub());
                     }
                     classes.get(className).addInnerClass(reader);
                 } else {
                     String className = reader.getClassName();
                     if(!classes.containsKey(className)) {
-                        classes.put(className, new ClassStub(className));
+                        classes.put(className, new ClassStub());
                     }
                     classes.get(className).setContents(reader);
                 }
@@ -44,14 +46,19 @@ public class GenerateStubs {
                     try(Stream<Path> p2 = Files.list(path)) {
                         printParts(p2);
                     }
-                } catch(Exception e) {}
+                } catch(Exception e) {
+                    e.printStackTrace();
+                }
             }
+        }
+        for(var entry : classes.entrySet()) {
+            entry.getValue().toFile(outDir);
         }
     }
 
     public static void main(String[] args) throws IOException {
         var fs = FileSystems.newFileSystem(URI.create("jrt:/"), Collections.emptyMap());
-        try (Stream<Path> p = Files.list(fs.getPath("/modules/jdk.compiler/com/sun/tools/"))) {
+        try (Stream<Path> p = Files.list(fs.getPath("/modules/jdk.compiler/com/"))) {
             printParts(p);
         }
     }

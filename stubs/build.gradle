@@ -9,6 +9,7 @@ repositories {
 
 dependencies {
     implementation 'org.ow2.asm:asm:9.7'
+    implementation 'com.squareup:javapoet:1.13.0'
 }
 
 task(generateStubs, type: JavaExec) {

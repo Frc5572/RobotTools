@@ -65,7 +65,8 @@ public class RobotProcessor extends AbstractProcessor {
             List<TypeMirror> params = new ArrayList<>();
 
             for (var mirror : classElement.getAnnotationMirrors()) {
-                if (!mirror.getAnnotationType().asElement().getSimpleName().toString().equals("GenerateEmptyIO")) {
+                if (!mirror.getAnnotationType().asElement().getSimpleName()
+                    .toString().equals("GenerateEmptyIO")) {
                     continue;
                 }
                 for (var ev : mirror.getElementValues().entrySet()) {
@@ -75,7 +76,10 @@ public class RobotProcessor extends AbstractProcessor {
                 }
             }
 
-            var specBuilder = TypeSpec.classBuilder(emptyClassName).addSuperinterface(TypeName.get(classElement.asType())).addModifiers(Modifier.PUBLIC, Modifier.FINAL);
+            var specBuilder = TypeSpec.classBuilder(emptyClassName)
+                                      .addSuperinterface(
+                                          TypeName.get(classElement.asType()))
+                                      .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
 
             AtomicInteger i = new AtomicInteger();
             var constructor = MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC)

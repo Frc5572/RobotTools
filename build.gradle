@@ -21,7 +21,7 @@ publishing {
             // Use jitpack format for publishing to mavenLocal
             groupId = 'com.github.Frc5572'
             artifactId = 'RobotTools'
-            version = 'main-SNAPSHOT'
+            version = 'test-SNAPSHOT'
 
             from components.java
         }

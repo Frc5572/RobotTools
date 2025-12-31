@@ -47,7 +47,7 @@ public class RobotProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         boolean success = false;
         for (var anno : annotations) {
-            System.out.println("Trying " + anno.getQualifiedName());
+            // System.out.println("Trying " + anno.getQualifiedName());
             if (anno.getSimpleName().toString().equals("GenerateEmptyIO")) {
                 processGenerateEmptyIO(anno, roundEnv);
                 success = true;
@@ -72,7 +72,7 @@ public class RobotProcessor extends AbstractProcessor {
             TypeElement parent = (TypeElement) parent_;
             String builderName = parent.getSimpleName() + "Builder";
             String builderPackage = getPackageName(parent);
-            System.out.println("Processing " + builderPackage + "." + builderName);
+            // System.out.println("Processing " + builderPackage + "." + builderName);
             for(var mirror : constructorElement.getAnnotationMirrors()) {
                 if (!mirror.getAnnotationType().asElement().getSimpleName()
                         .toString().equals("TypeStateBuilder")) {
@@ -123,10 +123,10 @@ public class RobotProcessor extends AbstractProcessor {
             }
 
             for(var field : fields) {
-                System.out.println("field " + field.name);
+                // System.out.println("field " + field.name);
                 if(field instanceof TypeStateBuilder.MethodField method_field) {
                     if(method_field.alt != null) {
-                        System.out.println("  alt");
+                        // System.out.println("  alt");
                     }
                 }
             }

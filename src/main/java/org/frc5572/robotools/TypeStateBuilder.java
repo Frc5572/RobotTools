@@ -40,6 +40,9 @@ public class TypeStateBuilder {
         base.write_constructor(builder, true);
         base.write_methods(builder, permutations);
         for (int i = 1; i < permutations.length; i++) {
+            if(permutations[i] == null) {
+                continue;
+            }
             TypeSpec.Builder subBuilder = TypeSpec.classBuilder(permutations[i].class_name())
                     .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL);
             permutations[i].write_fields(subBuilder);
@@ -51,9 +54,7 @@ public class TypeStateBuilder {
 
     private static boolean advance(boolean[] permutation) {
         for (int i = 0; i < permutation.length; i++) {
-            if (permutation[i]) {
-                permutation[i] = false;
-            } else {
+            if (!permutation[i]) {
                 permutation[i] = true;
                 return true;
             }
@@ -321,6 +322,7 @@ public class TypeStateBuilder {
                         int next_index = encodePermutationAsInt(next);
                         TypeName result = permutations[next_index].type_name();
                         write_method(builder, i, method_field, result);
+                        break;
                     }
                     j++;
                 }

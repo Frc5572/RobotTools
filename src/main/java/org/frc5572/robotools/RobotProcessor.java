@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
@@ -22,7 +21,6 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import javax.tools.Diagnostic.Kind;
-
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
@@ -32,7 +30,8 @@ import com.squareup.javapoet.TypeSpec;
 /**
  * Annotation processor for checks. Used by VS Code.
  */
-@SupportedAnnotationTypes({ "frc.robot.util.typestate.TypeStateBuilder", "frc.robot.util.GenerateEmptyIO" })
+@SupportedAnnotationTypes({"frc.robot.util.typestate.TypeStateBuilder",
+    "frc.robot.util.GenerateEmptyIO"})
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 public class RobotProcessor extends AbstractProcessor {
 
@@ -59,29 +58,30 @@ public class RobotProcessor extends AbstractProcessor {
         return success;
     }
 
-    private void processGenerateTypeStateBuilder(TypeElement annotation, RoundEnvironment roundEnv) {
+    private void processGenerateTypeStateBuilder(TypeElement annotation,
+        RoundEnvironment roundEnv) {
         roundEnv.getElementsAnnotatedWith(annotation).forEach(constructorElement_ -> {
             ExecutableElement constructorElement = (ExecutableElement) constructorElement_;
             Element parent_ = constructorElement.getEnclosingElement();
             if (!(parent_ instanceof TypeElement)) {
                 processingEnv.getMessager().printMessage(Kind.ERROR,
-                        "TypeStateBuilder constructor must be the direct child of a TypeElement (e.g. class). Instead found "
-                                + parent_.getKind().toString() + ".",
-                        constructorElement);
+                    "TypeStateBuilder constructor must be the direct child of a TypeElement (e.g. class). Instead found "
+                        + parent_.getKind().toString() + ".",
+                    constructorElement);
             }
             TypeElement parent = (TypeElement) parent_;
             String builderName = parent.getSimpleName() + "Builder";
             String builderPackage = getPackageName(parent);
             // System.out.println("Processing " + builderPackage + "." + builderName);
-            for(var mirror : constructorElement.getAnnotationMirrors()) {
-                if (!mirror.getAnnotationType().asElement().getSimpleName()
-                        .toString().equals("TypeStateBuilder")) {
+            for (var mirror : constructorElement.getAnnotationMirrors()) {
+                if (!mirror.getAnnotationType().asElement().getSimpleName().toString()
+                    .equals("TypeStateBuilder")) {
                     continue;
                 }
                 for (var ev : mirror.getElementValues().entrySet()) {
                     if (ev.getKey().getSimpleName().toString().equals("value")) {
                         String res = ev.getValue().accept(new StringVisitor(), null);
-                        if(res != null) {
+                        if (res != null) {
                             builderName = res;
                         }
                     }
@@ -90,50 +90,63 @@ public class RobotProcessor extends AbstractProcessor {
 
             List<TypeStateBuilder.Field> fields = new ArrayList<>();
             List<? extends VariableElement> params = constructorElement.getParameters();
-            for(int i = 0; i < params.size(); i++) {
+            for (int i = 0; i < params.size(); i++) {
                 boolean found = false;
                 VariableElement param = params.get(i);
-                for(var mirror : param.getAnnotationMirrors()) {
-                    if (mirror.getAnnotationType().asElement().getSimpleName()
-                        .toString().equals("InitField")) {
-                        if(found) {
-                            processingEnv.getMessager().printMessage(Kind.ERROR, "Each parameter of a TypeStateBuilder constructor can only have one of @InitField, @RequiredField or @OptionalField", param);
+                for (var mirror : param.getAnnotationMirrors()) {
+                    if (mirror.getAnnotationType().asElement().getSimpleName().toString()
+                        .equals("InitField")) {
+                        if (found) {
+                            processingEnv.getMessager().printMessage(Kind.ERROR,
+                                "Each parameter of a TypeStateBuilder constructor can only have one of @InitField, @RequiredField or @OptionalField",
+                                param);
                         }
-                        fields.add(new TypeStateBuilder.InitField(param.asType(), param.getSimpleName().toString()));
+                        fields.add(new TypeStateBuilder.InitField(param.asType(),
+                            param.getSimpleName().toString()));
                         found = true;
-                    } else if (mirror.getAnnotationType().asElement().getSimpleName()
-                        .toString().equals("RequiredField")) {
-                        if(found) {
-                            processingEnv.getMessager().printMessage(Kind.ERROR, "Each parameter of a TypeStateBuilder constructor can only have one of @InitField, @RequiredField or @OptionalField", param);
+                    } else if (mirror.getAnnotationType().asElement().getSimpleName().toString()
+                        .equals("RequiredField")) {
+                        if (found) {
+                            processingEnv.getMessager().printMessage(Kind.ERROR,
+                                "Each parameter of a TypeStateBuilder constructor can only have one of @InitField, @RequiredField or @OptionalField",
+                                param);
                         }
-                        fields.add(TypeStateBuilder.RequiredField.fromAnnotation(param.asType(), param.getSimpleName().toString(), mirror));
+                        fields.add(TypeStateBuilder.RequiredField.fromAnnotation(param.asType(),
+                            param.getSimpleName().toString(), mirror));
                         found = true;
-                    } else if (mirror.getAnnotationType().asElement().getSimpleName()
-                        .toString().equals("OptionalField")) {
-                        if(found) {
-                            processingEnv.getMessager().printMessage(Kind.ERROR, "Each parameter of a TypeStateBuilder constructor can only have one of @InitField, @RequiredField or @OptionalField", param);
+                    } else if (mirror.getAnnotationType().asElement().getSimpleName().toString()
+                        .equals("OptionalField")) {
+                        if (found) {
+                            processingEnv.getMessager().printMessage(Kind.ERROR,
+                                "Each parameter of a TypeStateBuilder constructor can only have one of @InitField, @RequiredField or @OptionalField",
+                                param);
                         }
-                        fields.add(TypeStateBuilder.OptionalField.fromAnnotation(param.asType(), param.getSimpleName().toString(), mirror));
+                        fields.add(TypeStateBuilder.OptionalField.fromAnnotation(param.asType(),
+                            param.getSimpleName().toString(), mirror));
                         found = true;
                     }
                 }
-                if(!found) {
-                    processingEnv.getMessager().printMessage(Kind.ERROR, "Each parameter of a TypeStateBuilder constructor must have one of @InitField, @RequiredField or @OptionalField", param);
+                if (!found) {
+                    processingEnv.getMessager().printMessage(Kind.ERROR,
+                        "Each parameter of a TypeStateBuilder constructor must have one of @InitField, @RequiredField or @OptionalField",
+                        param);
                 }
             }
 
-            for(var field : fields) {
+            for (var field : fields) {
                 // System.out.println("field " + field.name);
-                if(field instanceof TypeStateBuilder.MethodField method_field) {
-                    if(method_field.alt != null) {
-                        // System.out.println("  alt");
+                if (field instanceof TypeStateBuilder.MethodField method_field) {
+                    if (method_field.alt != null) {
+                        // System.out.println(" alt");
                     }
                 }
             }
 
-            var specBuilder = TypeSpec.classBuilder(builderName).addModifiers(Modifier.PUBLIC, Modifier.FINAL);
+            var specBuilder =
+                TypeSpec.classBuilder(builderName).addModifiers(Modifier.PUBLIC, Modifier.FINAL);
 
-            TypeStateBuilder typeStateBuilder = new TypeStateBuilder(builderName, fields.toArray(TypeStateBuilder.Field[]::new), parent.asType());
+            TypeStateBuilder typeStateBuilder = new TypeStateBuilder(builderName,
+                fields.toArray(TypeStateBuilder.Field[]::new), parent.asType());
             typeStateBuilder.apply(specBuilder);
 
             var spec = specBuilder.build();
@@ -142,9 +155,8 @@ public class RobotProcessor extends AbstractProcessor {
             try {
                 file.writeTo(processingEnv.getFiler());
             } catch (IOException e) {
-                processingEnv
-                        .getMessager()
-                        .printMessage(Diagnostic.Kind.ERROR, "Failed to write class", constructorElement);
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+                    "Failed to write class", constructorElement);
                 e.printStackTrace();
             }
         });
@@ -159,8 +171,8 @@ public class RobotProcessor extends AbstractProcessor {
             List<TypeMirror> params = new ArrayList<>();
 
             for (var mirror : classElement.getAnnotationMirrors()) {
-                if (!mirror.getAnnotationType().asElement().getSimpleName()
-                        .toString().equals("GenerateEmptyIO")) {
+                if (!mirror.getAnnotationType().asElement().getSimpleName().toString()
+                    .equals("GenerateEmptyIO")) {
                     continue;
                 }
                 for (var ev : mirror.getElementValues().entrySet()) {
@@ -171,25 +183,25 @@ public class RobotProcessor extends AbstractProcessor {
             }
 
             var specBuilder = TypeSpec.classBuilder(emptyClassName)
-                    .addSuperinterface(
-                            TypeName.get(classElement.asType()))
-                    .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
+                .addSuperinterface(TypeName.get(classElement.asType()))
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
 
             AtomicInteger i = new AtomicInteger();
             var constructor = MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC)
-                    .addParameters(params.stream().map(ty -> {
-                        return ParameterSpec.builder(TypeName.get(ty), "arg" + i.incrementAndGet()).build();
-                    }).toList()).build();
+                .addParameters(params.stream().map(ty -> {
+                    return ParameterSpec.builder(TypeName.get(ty), "arg" + i.incrementAndGet())
+                        .build();
+                }).toList()).build();
 
             for (var element : classElement.getEnclosedElements()) {
                 if (element instanceof ExecutableElement javaMethod) {
-                    specBuilder.addMethod(MethodSpec.methodBuilder(javaMethod.getSimpleName().toString())
-                            .addModifiers(Modifier.PUBLIC)
-                            .addAnnotation(Override.class)
-                            .returns(TypeName.VOID).addParameters(javaMethod.getParameters().stream().map(param -> {
-                                return ParameterSpec
-                                        .builder(TypeName.get(param.asType()), param.getSimpleName().toString())
-                                        .build();
+                    specBuilder
+                        .addMethod(MethodSpec.methodBuilder(javaMethod.getSimpleName().toString())
+                            .addModifiers(Modifier.PUBLIC).addAnnotation(Override.class)
+                            .returns(TypeName.VOID)
+                            .addParameters(javaMethod.getParameters().stream().map(param -> {
+                                return ParameterSpec.builder(TypeName.get(param.asType()),
+                                    param.getSimpleName().toString()).build();
                             }).toList()).addCode("// Intentionally do nothing").build());
                 }
             }
@@ -202,9 +214,8 @@ public class RobotProcessor extends AbstractProcessor {
             try {
                 file.writeTo(processingEnv.getFiler());
             } catch (IOException e) {
-                processingEnv
-                        .getMessager()
-                        .printMessage(Diagnostic.Kind.ERROR, "Failed to write class", classElement);
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+                    "Failed to write class", classElement);
                 e.printStackTrace();
             }
         });

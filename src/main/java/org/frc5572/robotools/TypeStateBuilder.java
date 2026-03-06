@@ -79,7 +79,7 @@ public class TypeStateBuilder {
             constructor.addCode("this." + field.name + "_ = " + field.name + "_;\n");
             isDifferent = true;
         }
-        if(isDifferent) {
+        if (isDifferent) {
             builder.addMethod(constructor.addModifiers(Modifier.PRIVATE).build());
         }
         addMethods(builder, enabled);
@@ -135,19 +135,20 @@ public class TypeStateBuilder {
 
     private void addMethods(TypeSpec.Builder builder, boolean[] enabled) {
         boolean isFinishable = true;
-        for(int i = 0; i < enabled.length; i++) {
-            if(!enabled[i]) {
+        for (int i = 0; i < enabled.length; i++) {
+            if (!enabled[i]) {
                 isFinishable = false;
                 break;
             }
         }
-        if(isFinishable) {
+        if (isFinishable) {
             TypeName returnType = TypeName.get(result);
-            MethodSpec.Builder finish = MethodSpec.methodBuilder("finish").addModifiers(Modifier.PUBLIC).returns(returnType);
+            MethodSpec.Builder finish = MethodSpec.methodBuilder("finish").addModifiers(Modifier.PUBLIC)
+                    .returns(returnType);
             String code = "return new " + returnType + "(";
             boolean isFirst = true;
-            for(Field field : fields) {
-                if(!isFirst) {
+            for (Field field : fields) {
+                if (!isFirst) {
                     code += ", ";
                 }
                 code += field.name + "_";
@@ -267,9 +268,10 @@ public class TypeStateBuilder {
             method.addCode(code + ");\n");
             builder.addMethod(method.addModifiers(Modifier.PUBLIC).build());
 
-            if(field.alt != null) {
+            if (field.alt != null) {
                 method = MethodSpec.methodBuilder(field.name).returns(ClassName.get("", thisName));
-                method.addParameter(ParameterSpec.builder(TypeName.get(field.alt.type), field.alt.parameterName).build());
+                method.addParameter(
+                        ParameterSpec.builder(TypeName.get(field.alt.type), field.alt.parameterName).build());
                 code = "return new " + thisName + "(";
                 isFirst = true;
                 for (int i = 0; i < enabled.length; i++) {
@@ -292,7 +294,7 @@ public class TypeStateBuilder {
                     if (!isFirst) {
                         code += ", ";
                     }
-                    if(field_ == field) {
+                    if (field_ == field) {
                         code += field.alt.code;
                     } else {
                         code += field_.name + "_";

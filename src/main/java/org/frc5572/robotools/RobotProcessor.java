@@ -133,15 +133,6 @@ public class RobotProcessor extends AbstractProcessor {
                 }
             }
 
-            for (var field : fields) {
-                // System.out.println("field " + field.name);
-                if (field instanceof TypeStateBuilder.MethodField method_field) {
-                    if (method_field.alt != null) {
-                        // System.out.println(" alt");
-                    }
-                }
-            }
-
             var specBuilder =
                 TypeSpec.classBuilder(builderName).addModifiers(Modifier.PUBLIC, Modifier.FINAL);
 

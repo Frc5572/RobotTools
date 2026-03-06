@@ -1,66 +1,310 @@
 package org.frc5572.robotools;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeMirror;
+
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 /** Template builder for TypeState Builders */
 public class TypeStateBuilder {
 
-    private final Fields[] permutations;
-    private final int num_permutable_fields;
+    private final String name;
+    private final ArrayList<RequiredField> requiredFields = new ArrayList<>();
+    private final ArrayList<InitField> initFields = new ArrayList<>();
+    private final ArrayList<OptionalField> optionalFields = new ArrayList<>();
+    private final Field[] fields;
+    private final TypeMirror result;
 
     /** Template builder for TypeState Builders */
     public TypeStateBuilder(String name, Field[] fields_, TypeMirror result) {
-        num_permutable_fields =
-            (int) Arrays.stream(fields_).filter((x) -> !(x instanceof InitField)).count();
-        permutations = new Fields[1 << num_permutable_fields];
-        boolean[] start = new boolean[num_permutable_fields];
-        Fields fields = new Fields(name, fields_, start, result);
-        while (true) {
-            int index = encodePermutationAsInt(start);
-            permutations[index] = fields;
-            start = Arrays.copyOf(start, start.length);
-            if (!advance(start)) {
-                break;
+        this.fields = fields_;
+        this.result = result;
+        this.name = name;
+        for (var field : fields_) {
+            if (field instanceof RequiredField rField) {
+                requiredFields.add(rField);
+            } else if (field instanceof OptionalField oField) {
+                optionalFields.add(oField);
+            } else if (field instanceof InitField iField) {
+                initFields.add(iField);
             }
-            fields = new Fields(name, fields_, start, result);
         }
     }
 
-    /** Create typestate builders and write them to a typespec */
-    public void apply(TypeSpec.Builder builder) {
-        Fields base = permutations[encodePermutationAsInt(new boolean[num_permutable_fields])];
-        base.write_fields(builder);
-        base.write_constructor(builder, true);
-        base.write_methods(builder, permutations);
-        for (int i = 1; i < permutations.length; i++) {
-            if (permutations[i] == null) {
-                continue;
-            }
-            TypeSpec.Builder subBuilder = TypeSpec.classBuilder(permutations[i].class_name())
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL);
-            permutations[i].write_fields(subBuilder);
-            permutations[i].write_constructor(subBuilder, false);
-            permutations[i].write_methods(subBuilder, permutations);
-            builder.addType(subBuilder.build());
-        }
-    }
-
-    private static boolean advance(boolean[] permutation) {
-        for (int i = 0; i < permutation.length; i++) {
-            if (!permutation[i]) {
-                permutation[i] = true;
+    private static boolean advance(boolean[] enabled) {
+        for (int i = 0; i < enabled.length; i++) {
+            if (enabled[i]) {
+                enabled[i] = false;
+            } else {
+                enabled[i] = true;
                 return true;
             }
         }
         return false;
+    }
+
+    /** Create typestate builders and write them to a typespec */
+    public void apply(TypeSpec.Builder builder) {
+        boolean[] enabled = new boolean[requiredFields.size()];
+
+        MethodSpec.Builder constructor = MethodSpec.constructorBuilder();
+        for (var field : initFields) {
+            builder.addField(FieldSpec
+                    .builder(TypeName.get(field.type), field.name + "_", Modifier.PRIVATE, Modifier.FINAL).build());
+            constructor.addParameter(ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
+            constructor.addCode("this." + field.name + "_ = " + field.name + "_;\n");
+        }
+        for (var field : optionalFields) {
+            builder.addField(FieldSpec
+                    .builder(TypeName.get(field.type), field.name + "_", Modifier.PRIVATE, Modifier.FINAL).build());
+            constructor.addCode("this." + field.name + "_ = " + field.default_code + ";\n");
+        }
+        builder.addMethod(constructor.addModifiers(Modifier.PUBLIC).build());
+        constructor = MethodSpec.constructorBuilder();
+        boolean isDifferent = false;
+        for (var field : initFields) {
+            constructor.addParameter(ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
+            constructor.addCode("this." + field.name + "_ = " + field.name + "_;\n");
+        }
+        for (var field : optionalFields) {
+            constructor.addParameter(ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
+            constructor.addCode("this." + field.name + "_ = " + field.name + "_;\n");
+            isDifferent = true;
+        }
+        if (isDifferent) {
+            builder.addMethod(constructor.addModifiers(Modifier.PRIVATE).build());
+        }
+        addMethods(builder, enabled);
+        while (advance(enabled)) {
+            constructor = MethodSpec.constructorBuilder();
+            for (int i = 0; i < enabled.length; i++) {
+                if (enabled[i]) {
+                    var field = requiredFields.get(i);
+                    constructor.addParameter(ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
+                    constructor.addCode("this." + field.name + "_ = " + field.name + "_;\n");
+                }
+            }
+            TypeSpec.Builder stepClass = TypeSpec.classBuilder(getName(enabled));
+            for (int i = 0; i < enabled.length; i++) {
+                if (enabled[i]) {
+                    var field = requiredFields.get(i);
+                    stepClass.addField(FieldSpec
+                            .builder(TypeName.get(field.type), field.name + "_", Modifier.PRIVATE, Modifier.FINAL)
+                            .build());
+                }
+            }
+            for (var field : initFields) {
+                stepClass.addField(FieldSpec
+                        .builder(TypeName.get(field.type), field.name + "_", Modifier.PRIVATE, Modifier.FINAL).build());
+                constructor.addParameter(ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
+                constructor.addCode("this." + field.name + "_ = " + field.name + "_;\n");
+            }
+            for (var field : optionalFields) {
+                stepClass.addField(FieldSpec
+                        .builder(TypeName.get(field.type), field.name + "_", Modifier.PRIVATE, Modifier.FINAL).build());
+                constructor.addParameter(ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
+                constructor.addCode("this." + field.name + "_ = " + field.name + "_;\n");
+            }
+            stepClass.addMethod(constructor.addModifiers(Modifier.PRIVATE).build());
+            addMethods(stepClass, enabled);
+            builder.addType(stepClass.addModifiers(Modifier.PUBLIC).build());
+        }
+    }
+
+    private String getName(boolean[] enabled) {
+        StringBuilder builderName = new StringBuilder(this.name);
+        boolean any = false;
+        for (int i = 0; i < enabled.length; i++) {
+            builderName.append(enabled[i] ? "1" : "0");
+            any = any || enabled[i];
+        }
+        if (any) {
+            return builderName.toString();
+        } else {
+            return this.name;
+        }
+    }
+
+    private void addMethods(TypeSpec.Builder builder, boolean[] enabled) {
+        boolean isFinishable = true;
+        for (int i = 0; i < enabled.length; i++) {
+            if (!enabled[i]) {
+                isFinishable = false;
+                break;
+            }
+        }
+        if (isFinishable) {
+            TypeName returnType = TypeName.get(result);
+            MethodSpec.Builder finish = MethodSpec.methodBuilder("finish").addModifiers(Modifier.PUBLIC)
+                    .returns(returnType);
+            String code = "return new " + returnType + "(";
+            boolean isFirst = true;
+            for (Field field : fields) {
+                if (!isFirst) {
+                    code += ", ";
+                }
+                code += field.name + "_";
+                isFirst = false;
+            }
+            finish.addCode(code + ");\n");
+            builder.addMethod(finish.build());
+        }
+        for (int i = 0; i < enabled.length; i++) {
+            if (!enabled[i]) {
+                var field = requiredFields.get(i);
+                boolean[] next = new boolean[enabled.length];
+                System.arraycopy(enabled, 0, next, 0, enabled.length);
+                next[i] = true;
+                String nextName = getName(next);
+                MethodSpec.Builder method = MethodSpec.methodBuilder(field.name).returns(ClassName.get("", nextName));
+                method.addParameter(ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
+                String code = "return new " + nextName + "(";
+                boolean isFirst = true;
+                for (int j = 0; j < enabled.length; j++) {
+                    if (enabled[j] || i == j) {
+                        if (!isFirst) {
+                            code += ", ";
+                        }
+                        code += requiredFields.get(j).name + "_";
+                        isFirst = false;
+                    }
+                }
+                for (var field_ : initFields) {
+                    if (!isFirst) {
+                        code += ", ";
+                    }
+                    code += field_.name + "_";
+                    isFirst = false;
+                }
+                for (var field_ : optionalFields) {
+                    if (!isFirst) {
+                        code += ", ";
+                    }
+                    code += field_.name + "_";
+                    isFirst = false;
+                }
+                method.addCode(code + ");\n");
+                builder.addMethod(method.addModifiers(Modifier.PUBLIC).build());
+
+                if (field.alt != null) {
+                    method = MethodSpec.methodBuilder(field.name).returns(ClassName.get("", nextName));
+                    method.addParameter(
+                            ParameterSpec.builder(TypeName.get(field.alt.type), field.alt.parameterName).build());
+                    code = "return new " + nextName + "(";
+                    isFirst = true;
+                    for (int j = 0; j < enabled.length; j++) {
+                        if (i == j) {
+                            if (!isFirst) {
+                                code += ", ";
+                            }
+                            code += field.alt.code;
+                            isFirst = false;
+                            continue;
+                        }
+                        if (enabled[j]) {
+                            if (!isFirst) {
+                                code += ", ";
+                            }
+                            code += requiredFields.get(j).name + "_";
+                            isFirst = false;
+                        }
+                    }
+                    for (var field_ : initFields) {
+                        if (!isFirst) {
+                            code += ", ";
+                        }
+                        code += field_.name + "_";
+                        isFirst = false;
+                    }
+                    for (var field_ : optionalFields) {
+                        if (!isFirst) {
+                            code += ", ";
+                        }
+                        code += field_.name + "_";
+                        isFirst = false;
+                    }
+                    method.addCode(code + ");\n");
+                    builder.addMethod(method.addModifiers(Modifier.PUBLIC).build());
+                }
+            }
+        }
+        String thisName = getName(enabled);
+        for (var field : optionalFields) {
+            MethodSpec.Builder method = MethodSpec.methodBuilder(field.name).returns(ClassName.get("", thisName));
+            method.addParameter(ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
+            String code = "return new " + thisName + "(";
+            boolean isFirst = true;
+            for (int i = 0; i < enabled.length; i++) {
+                if (enabled[i]) {
+                    if (!isFirst) {
+                        code += ", ";
+                    }
+                    code += requiredFields.get(i).name + "_";
+                    isFirst = false;
+                }
+            }
+            for (var field_ : initFields) {
+                if (!isFirst) {
+                    code += ", ";
+                }
+                code += field_.name + "_";
+                isFirst = false;
+            }
+            for (var field_ : optionalFields) {
+                if (!isFirst) {
+                    code += ", ";
+                }
+                code += field_.name + "_";
+                isFirst = false;
+            }
+            method.addCode(code + ");\n");
+            builder.addMethod(method.addModifiers(Modifier.PUBLIC).build());
+
+            if (field.alt != null) {
+                method = MethodSpec.methodBuilder(field.name).returns(ClassName.get("", thisName));
+                method.addParameter(
+                        ParameterSpec.builder(TypeName.get(field.alt.type), field.alt.parameterName).build());
+                code = "return new " + thisName + "(";
+                isFirst = true;
+                for (int i = 0; i < enabled.length; i++) {
+                    if (enabled[i]) {
+                        if (!isFirst) {
+                            code += ", ";
+                        }
+                        code += requiredFields.get(i).name + "_";
+                        isFirst = false;
+                    }
+                }
+                for (var field_ : initFields) {
+                    if (!isFirst) {
+                        code += ", ";
+                    }
+                    code += field_.name + "_";
+                    isFirst = false;
+                }
+                for (var field_ : optionalFields) {
+                    if (!isFirst) {
+                        code += ", ";
+                    }
+                    if (field_ == field) {
+                        code += field.alt.code;
+                    } else {
+                        code += field_.name + "_";
+                    }
+                    isFirst = false;
+                }
+                method.addCode(code + ");\n");
+                builder.addMethod(method.addModifiers(Modifier.PUBLIC).build());
+            }
+        }
     }
 
     /** Base class for fields */
@@ -117,19 +361,17 @@ public class TypeStateBuilder {
 
         /** A field that is required to finish the builder. */
         public static RequiredField fromAnnotation(TypeMirror type, String name,
-            AnnotationMirror mirror) {
+                AnnotationMirror mirror) {
             AltMethod alt = null;
             for (var ev : mirror.getElementValues().entrySet()) {
                 if (ev.getKey().getSimpleName().toString().equals("alt")) {
-                    AnnotationMirror altMirror =
-                        ev.getValue().accept(new AnnotationMirrorVisitor(), null);
+                    AnnotationMirror altMirror = ev.getValue().accept(new AnnotationMirrorVisitor(), null);
                     alt = AltMethod.fromAnnotation(altMirror, name);
                 }
             }
             return new RequiredField(type, name, alt);
         }
     }
-
 
     /** A field that has a default in case it is not specified. */
     public static class OptionalField extends MethodField {
@@ -150,15 +392,14 @@ public class TypeStateBuilder {
 
         /** A field that has a default in case it is not specified. */
         public static OptionalField fromAnnotation(TypeMirror type, String name,
-            AnnotationMirror mirror) {
+                AnnotationMirror mirror) {
             String defaultCode = "";
             AltMethod alt = null;
             for (var ev : mirror.getElementValues().entrySet()) {
                 if (ev.getKey().getSimpleName().toString().equals("value")) {
                     defaultCode = ev.getValue().accept(new StringVisitor(), null);
                 } else if (ev.getKey().getSimpleName().toString().equals("alt")) {
-                    AnnotationMirror altMirror =
-                        ev.getValue().accept(new AnnotationMirrorVisitor(), null);
+                    AnnotationMirror altMirror = ev.getValue().accept(new AnnotationMirrorVisitor(), null);
                     alt = AltMethod.fromAnnotation(altMirror, name);
                 }
             }
@@ -176,9 +417,9 @@ public class TypeStateBuilder {
             }
 
             if (!mirror.getAnnotationType().asElement().getSimpleName().toString()
-                .equals("AltMethod")) {
+                    .equals("AltMethod")) {
                 System.out.println("annotation name doesn't match "
-                    + mirror.getAnnotationType().asElement().getSimpleName().toString());
+                        + mirror.getAnnotationType().asElement().getSimpleName().toString());
                 return null;
             }
             TypeMirror type = null;
@@ -206,187 +447,6 @@ public class TypeStateBuilder {
 
             return new AltMethod(type, parameterName, code);
         }
-    }
-
-
-    /** A specific permutation of fields. */
-    public static record Fields(String name, Field[] fields, boolean[] permutation,
-        TypeMirror result) {
-        /** A unique class name */
-        public String class_name() {
-            StringBuilder sb = new StringBuilder(name);
-            for (int i = 0; i < permutation.length; i++) {
-                sb.append(permutation[i] ? 1 : 0);
-            }
-            return sb.toString();
-        }
-
-        /** A unique class name */
-        public TypeName type_name() {
-            return ClassName.get("", class_name());
-        }
-
-        /** True if all required fields are filled. */
-        public boolean could_finish() {
-            int j = 0;
-            for (int i = 0; i < fields.length; i++) {
-                if (fields[i] instanceof MethodField) {
-                    if (fields[i] instanceof RequiredField) {
-                        if (!permutation[j]) {
-                            return false;
-                        }
-                    }
-                    j++;
-                }
-            }
-            return true;
-        }
-
-        /** True if all fields are filled. */
-        public boolean is_full() {
-            for (int i = 0; i < permutation.length; i++) {
-                if (!permutation[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        /** Get the permutation if a given index is additionally filled. */
-        public boolean[] next_permutation(int index) {
-            boolean[] next_ = new boolean[permutation.length];
-            System.arraycopy(permutation, 0, next_, 0, permutation.length);
-            next_[index] = true;
-            return next_;
-        }
-
-        /** Write constructor to typespec builder */
-        public void write_constructor(TypeSpec.Builder builder, boolean is_public) {
-            var constructor = MethodSpec.constructorBuilder()
-                .addModifiers(is_public ? Modifier.PUBLIC : Modifier.PRIVATE);
-            int j = 0;
-            for (int i = 0; i < fields.length; i++) {
-                if (fields[i] instanceof MethodField) {
-                    if (!permutation[j++]) {
-                        continue;
-                    }
-                }
-                constructor.addParameter(TypeName.get(this.fields[i].type),
-                    this.fields[i].name + "_");
-                constructor
-                    .addCode("this." + this.fields[i].name + "_ = " + this.fields[i].name + "_;\n");
-            }
-            builder.addMethod(constructor.build());
-        }
-
-        /** Write fields to typespec builder */
-        public void write_fields(TypeSpec.Builder builder) {
-            int j = 0;
-            for (int i = 0; i < fields.length; i++) {
-                if (fields[i] instanceof MethodField) {
-                    if (!permutation[j++]) {
-                        continue;
-                    }
-                }
-                builder.addField(FieldSpec.builder(TypeName.get(fields[i].type),
-                    fields[i].name + "_", Modifier.PRIVATE, Modifier.FINAL).build());
-            }
-        }
-
-        /** Write method to typespec builder */
-        private void write_method(TypeSpec.Builder builder, int index, MethodField field,
-            TypeName result) {
-            var method =
-                MethodSpec.methodBuilder(field.name).addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                    .returns(result).addParameter(TypeName.get(field.type), field.name + "_");
-            method.addCode("return new $T(", result);
-            int j = 0;
-            boolean is_first = true;
-            for (int i = 0; i < fields.length; i++) {
-                if (i == index) {
-                    if (!is_first) {
-                        method.addCode(", ");
-                    }
-                    method.addCode(field.name + "_");
-                    is_first = false;
-                }
-                if (fields[i] instanceof MethodField) {
-                    if (!permutation[j++]) {
-                        continue;
-                    }
-                }
-                if (!is_first) {
-                    method.addCode(", ");
-                }
-                method.addCode("this." + fields[i].name + "_");
-                is_first = false;
-            }
-            method.addCode(");");
-            builder.addMethod(method.build());
-            if (field.alt != null) {
-                method = MethodSpec.methodBuilder(field.name)
-                    .addModifiers(Modifier.PUBLIC, Modifier.FINAL).returns(result)
-                    .addParameter(TypeName.get(field.alt.type), field.alt.parameterName);
-                method.addCode("return this." + field.name + "(" + field.alt.code + ");");
-                builder.addMethod(method.build());
-            }
-        }
-
-        /** Write method to complete builder to typespec builder */
-        private void write_finish(TypeSpec.Builder builder) {
-            var method = MethodSpec.methodBuilder("finish")
-                .addModifiers(Modifier.PUBLIC, Modifier.FINAL).returns(TypeName.get(result));
-            method.addCode("return new $T(", TypeName.get(result));
-            int j = 0;
-            for (int i = 0; i < fields.length; i++) {
-                if (i != 0) {
-                    method.addCode(", ");
-                }
-                if (fields[i] instanceof OptionalField optional_field) {
-                    if (!permutation[j++]) {
-                        method.addCode(optional_field.default_code);
-                        continue;
-                    }
-                }
-                if (fields[i] instanceof RequiredField) {
-                    j++;
-                }
-                method.addCode("this." + fields[i].name + "_");
-            }
-            method.addCode(");");
-            builder.addMethod(method.build());
-        }
-
-        /** Write methods to advance builder to typespec builder */
-        public void write_methods(TypeSpec.Builder builder, Fields[] permutations) {
-            int j = 0;
-            for (int i = 0; i < this.fields.length; i++) {
-                if (fields[i] instanceof MethodField method_field) {
-                    if (!permutation[j]) {
-                        boolean[] next = next_permutation(j);
-                        int next_index = encodePermutationAsInt(next);
-                        TypeName result = permutations[next_index].type_name();
-                        write_method(builder, i, method_field, result);
-                        break;
-                    }
-                    j++;
-                }
-            }
-            if (could_finish()) {
-                write_finish(builder);
-            }
-        }
-    }
-
-    private static int encodePermutationAsInt(boolean[] permutation) {
-        int res = 0;
-        for (int i = 0; i < permutation.length; i++) {
-            if (permutation[i]) {
-                res += 1;
-            }
-            res <<= 1;
-        }
-        return res >> 1;
     }
 
 }

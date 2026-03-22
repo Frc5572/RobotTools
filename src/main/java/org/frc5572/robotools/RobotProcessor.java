@@ -72,6 +72,7 @@ public class RobotProcessor extends AbstractProcessor {
             TypeElement parent = (TypeElement) parent_;
             String builderName = parent.getSimpleName() + "Builder";
             String builderPackage = getPackageName(parent);
+            boolean isLinear = false;
             // System.out.println("Processing " + builderPackage + "." + builderName);
             for (var mirror : constructorElement.getAnnotationMirrors()) {
                 if (!mirror.getAnnotationType().asElement().getSimpleName().toString()
@@ -83,6 +84,11 @@ public class RobotProcessor extends AbstractProcessor {
                         String res = ev.getValue().accept(new StringVisitor(), null);
                         if (res != null) {
                             builderName = res;
+                        }
+                    } else if (ev.getKey().getSimpleName().toString().equals("linear")) {
+                        Boolean res = ev.getValue().accept(new BoolVisitor(), null);
+                        if (res != null) {
+                            isLinear = res;
                         }
                     }
                 }
@@ -136,7 +142,7 @@ public class RobotProcessor extends AbstractProcessor {
             var specBuilder =
                 TypeSpec.classBuilder(builderName).addModifiers(Modifier.PUBLIC, Modifier.FINAL);
 
-            TypeStateBuilder typeStateBuilder = new TypeStateBuilder(builderName,
+            TypeStateBuilder typeStateBuilder = new TypeStateBuilder(builderName, isLinear,
                 fields.toArray(TypeStateBuilder.Field[]::new), parent.asType());
             typeStateBuilder.apply(specBuilder);
 

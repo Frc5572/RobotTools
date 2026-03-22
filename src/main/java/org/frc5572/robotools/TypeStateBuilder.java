@@ -1,11 +1,9 @@
 package org.frc5572.robotools;
 
 import java.util.ArrayList;
-
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeMirror;
-
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
@@ -22,12 +20,14 @@ public class TypeStateBuilder {
     private final ArrayList<OptionalField> optionalFields = new ArrayList<>();
     private final Field[] fields;
     private final TypeMirror result;
+    private final boolean isLinear;
 
     /** Template builder for TypeState Builders */
-    public TypeStateBuilder(String name, Field[] fields_, TypeMirror result) {
+    public TypeStateBuilder(String name, boolean isLinear, Field[] fields_, TypeMirror result) {
         this.fields = fields_;
         this.result = result;
         this.name = name;
+        this.isLinear = isLinear;
         for (var field : fields_) {
             if (field instanceof RequiredField rField) {
                 requiredFields.add(rField);
@@ -39,10 +39,12 @@ public class TypeStateBuilder {
         }
     }
 
-    private static boolean advance(boolean[] enabled) {
+    private static boolean advance(boolean[] enabled, boolean isLinear) {
         for (int i = 0; i < enabled.length; i++) {
             if (enabled[i]) {
-                enabled[i] = false;
+                if (!isLinear) {
+                    enabled[i] = false;
+                }
             } else {
                 enabled[i] = true;
                 return true;
@@ -57,25 +59,28 @@ public class TypeStateBuilder {
 
         MethodSpec.Builder constructor = MethodSpec.constructorBuilder();
         for (var field : initFields) {
-            builder.addField(FieldSpec
-                    .builder(TypeName.get(field.type), field.name + "_", Modifier.PRIVATE, Modifier.FINAL).build());
-            constructor.addParameter(ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
+            builder.addField(FieldSpec.builder(TypeName.get(field.type), field.name + "_",
+                Modifier.PRIVATE, Modifier.FINAL).build());
+            constructor.addParameter(
+                ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
             constructor.addCode("this." + field.name + "_ = " + field.name + "_;\n");
         }
         for (var field : optionalFields) {
-            builder.addField(FieldSpec
-                    .builder(TypeName.get(field.type), field.name + "_", Modifier.PRIVATE, Modifier.FINAL).build());
+            builder.addField(FieldSpec.builder(TypeName.get(field.type), field.name + "_",
+                Modifier.PRIVATE, Modifier.FINAL).build());
             constructor.addCode("this." + field.name + "_ = " + field.default_code + ";\n");
         }
         builder.addMethod(constructor.addModifiers(Modifier.PUBLIC).build());
         constructor = MethodSpec.constructorBuilder();
         boolean isDifferent = false;
         for (var field : initFields) {
-            constructor.addParameter(ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
+            constructor.addParameter(
+                ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
             constructor.addCode("this." + field.name + "_ = " + field.name + "_;\n");
         }
         for (var field : optionalFields) {
-            constructor.addParameter(ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
+            constructor.addParameter(
+                ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
             constructor.addCode("this." + field.name + "_ = " + field.name + "_;\n");
             isDifferent = true;
         }
@@ -83,12 +88,13 @@ public class TypeStateBuilder {
             builder.addMethod(constructor.addModifiers(Modifier.PRIVATE).build());
         }
         addMethods(builder, enabled);
-        while (advance(enabled)) {
+        while (advance(enabled, isLinear)) {
             constructor = MethodSpec.constructorBuilder();
             for (int i = 0; i < enabled.length; i++) {
                 if (enabled[i]) {
                     var field = requiredFields.get(i);
-                    constructor.addParameter(ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
+                    constructor.addParameter(
+                        ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
                     constructor.addCode("this." + field.name + "_ = " + field.name + "_;\n");
                 }
             }
@@ -96,21 +102,22 @@ public class TypeStateBuilder {
             for (int i = 0; i < enabled.length; i++) {
                 if (enabled[i]) {
                     var field = requiredFields.get(i);
-                    stepClass.addField(FieldSpec
-                            .builder(TypeName.get(field.type), field.name + "_", Modifier.PRIVATE, Modifier.FINAL)
-                            .build());
+                    stepClass.addField(FieldSpec.builder(TypeName.get(field.type), field.name + "_",
+                        Modifier.PRIVATE, Modifier.FINAL).build());
                 }
             }
             for (var field : initFields) {
-                stepClass.addField(FieldSpec
-                        .builder(TypeName.get(field.type), field.name + "_", Modifier.PRIVATE, Modifier.FINAL).build());
-                constructor.addParameter(ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
+                stepClass.addField(FieldSpec.builder(TypeName.get(field.type), field.name + "_",
+                    Modifier.PRIVATE, Modifier.FINAL).build());
+                constructor.addParameter(
+                    ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
                 constructor.addCode("this." + field.name + "_ = " + field.name + "_;\n");
             }
             for (var field : optionalFields) {
-                stepClass.addField(FieldSpec
-                        .builder(TypeName.get(field.type), field.name + "_", Modifier.PRIVATE, Modifier.FINAL).build());
-                constructor.addParameter(ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
+                stepClass.addField(FieldSpec.builder(TypeName.get(field.type), field.name + "_",
+                    Modifier.PRIVATE, Modifier.FINAL).build());
+                constructor.addParameter(
+                    ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
                 constructor.addCode("this." + field.name + "_ = " + field.name + "_;\n");
             }
             stepClass.addMethod(constructor.addModifiers(Modifier.PRIVATE).build());
@@ -143,8 +150,8 @@ public class TypeStateBuilder {
         }
         if (isFinishable) {
             TypeName returnType = TypeName.get(result);
-            MethodSpec.Builder finish = MethodSpec.methodBuilder("finish").addModifiers(Modifier.PUBLIC)
-                    .returns(returnType);
+            MethodSpec.Builder finish = MethodSpec.methodBuilder("finish")
+                .addModifiers(Modifier.PUBLIC).returns(returnType);
             String code = "return new " + returnType + "(";
             boolean isFirst = true;
             for (Field field : fields) {
@@ -164,8 +171,10 @@ public class TypeStateBuilder {
                 System.arraycopy(enabled, 0, next, 0, enabled.length);
                 next[i] = true;
                 String nextName = getName(next);
-                MethodSpec.Builder method = MethodSpec.methodBuilder(field.name).returns(ClassName.get("", nextName));
-                method.addParameter(ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
+                MethodSpec.Builder method =
+                    MethodSpec.methodBuilder(field.name).returns(ClassName.get("", nextName));
+                method.addParameter(
+                    ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
                 String code = "return new " + nextName + "(";
                 boolean isFirst = true;
                 for (int j = 0; j < enabled.length; j++) {
@@ -195,9 +204,10 @@ public class TypeStateBuilder {
                 builder.addMethod(method.addModifiers(Modifier.PUBLIC).build());
 
                 if (field.alt != null) {
-                    method = MethodSpec.methodBuilder(field.name).returns(ClassName.get("", nextName));
-                    method.addParameter(
-                            ParameterSpec.builder(TypeName.get(field.alt.type), field.alt.parameterName).build());
+                    method =
+                        MethodSpec.methodBuilder(field.name).returns(ClassName.get("", nextName));
+                    method.addParameter(ParameterSpec
+                        .builder(TypeName.get(field.alt.type), field.alt.parameterName).build());
                     code = "return new " + nextName + "(";
                     isFirst = true;
                     for (int j = 0; j < enabled.length; j++) {
@@ -234,12 +244,17 @@ public class TypeStateBuilder {
                     method.addCode(code + ");\n");
                     builder.addMethod(method.addModifiers(Modifier.PUBLIC).build());
                 }
+                if (isLinear) {
+                    break;
+                }
             }
         }
         String thisName = getName(enabled);
         for (var field : optionalFields) {
-            MethodSpec.Builder method = MethodSpec.methodBuilder(field.name).returns(ClassName.get("", thisName));
-            method.addParameter(ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
+            MethodSpec.Builder method =
+                MethodSpec.methodBuilder(field.name).returns(ClassName.get("", thisName));
+            method.addParameter(
+                ParameterSpec.builder(TypeName.get(field.type), field.name + "_").build());
             String code = "return new " + thisName + "(";
             boolean isFirst = true;
             for (int i = 0; i < enabled.length; i++) {
@@ -270,8 +285,8 @@ public class TypeStateBuilder {
 
             if (field.alt != null) {
                 method = MethodSpec.methodBuilder(field.name).returns(ClassName.get("", thisName));
-                method.addParameter(
-                        ParameterSpec.builder(TypeName.get(field.alt.type), field.alt.parameterName).build());
+                method.addParameter(ParameterSpec
+                    .builder(TypeName.get(field.alt.type), field.alt.parameterName).build());
                 code = "return new " + thisName + "(";
                 isFirst = true;
                 for (int i = 0; i < enabled.length; i++) {
@@ -361,11 +376,12 @@ public class TypeStateBuilder {
 
         /** A field that is required to finish the builder. */
         public static RequiredField fromAnnotation(TypeMirror type, String name,
-                AnnotationMirror mirror) {
+            AnnotationMirror mirror) {
             AltMethod alt = null;
             for (var ev : mirror.getElementValues().entrySet()) {
                 if (ev.getKey().getSimpleName().toString().equals("alt")) {
-                    AnnotationMirror altMirror = ev.getValue().accept(new AnnotationMirrorVisitor(), null);
+                    AnnotationMirror altMirror =
+                        ev.getValue().accept(new AnnotationMirrorVisitor(), null);
                     alt = AltMethod.fromAnnotation(altMirror, name);
                 }
             }
@@ -392,14 +408,15 @@ public class TypeStateBuilder {
 
         /** A field that has a default in case it is not specified. */
         public static OptionalField fromAnnotation(TypeMirror type, String name,
-                AnnotationMirror mirror) {
+            AnnotationMirror mirror) {
             String defaultCode = "";
             AltMethod alt = null;
             for (var ev : mirror.getElementValues().entrySet()) {
                 if (ev.getKey().getSimpleName().toString().equals("value")) {
                     defaultCode = ev.getValue().accept(new StringVisitor(), null);
                 } else if (ev.getKey().getSimpleName().toString().equals("alt")) {
-                    AnnotationMirror altMirror = ev.getValue().accept(new AnnotationMirrorVisitor(), null);
+                    AnnotationMirror altMirror =
+                        ev.getValue().accept(new AnnotationMirrorVisitor(), null);
                     alt = AltMethod.fromAnnotation(altMirror, name);
                 }
             }
@@ -417,9 +434,9 @@ public class TypeStateBuilder {
             }
 
             if (!mirror.getAnnotationType().asElement().getSimpleName().toString()
-                    .equals("AltMethod")) {
+                .equals("AltMethod")) {
                 System.out.println("annotation name doesn't match "
-                        + mirror.getAnnotationType().asElement().getSimpleName().toString());
+                    + mirror.getAnnotationType().asElement().getSimpleName().toString());
                 return null;
             }
             TypeMirror type = null;

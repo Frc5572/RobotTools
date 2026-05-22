@@ -10,6 +10,7 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
+/** Main builder for typestate builders */
 public class TypeStateBuilder {
 
     private final String name;

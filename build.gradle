@@ -13,6 +13,14 @@ repositories {
 
 dependencies {
     implementation "com.squareup:javapoet:1.13.0"
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'com.google.testing.compile:compile-testing:0.21.0'
+    testImplementation 'com.google.truth:truth:1.4.4'
+}
+
+test {
+    useJUnit()
 }
 
 publishing {

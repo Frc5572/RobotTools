@@ -5,6 +5,16 @@ on:
 permissions:
   contents: write
 jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    container: wpilib/roborio-cross-ubuntu:2025-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Compile and run tests on robot code
+        run: ./gradlew test
   linting:
     name: Linting
     runs-on: ubuntu-latest

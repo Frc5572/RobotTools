@@ -1,7 +1,6 @@
-package org.frc5572.robotools;
+package org.frc5572.robotools.typestate;
 
 import java.util.ArrayList;
-import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeMirror;
 import com.squareup.javapoet.ClassName;
@@ -11,7 +10,7 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
-/** Template builder for TypeState Builders */
+/** Main builder for typestate builders */
 public class TypeStateBuilder {
 
     private final String name;
@@ -207,7 +206,8 @@ public class TypeStateBuilder {
                     method =
                         MethodSpec.methodBuilder(field.name).returns(ClassName.get("", nextName));
                     method.addParameter(ParameterSpec
-                        .builder(TypeName.get(field.alt.type), field.alt.parameterName).build());
+                        .builder(TypeName.get(field.alt.type()), field.alt.parameterName())
+                        .build());
                     code = "return new " + nextName + "(";
                     isFirst = true;
                     for (int j = 0; j < enabled.length; j++) {
@@ -215,7 +215,7 @@ public class TypeStateBuilder {
                             if (!isFirst) {
                                 code += ", ";
                             }
-                            code += field.alt.code;
+                            code += field.alt.code();
                             isFirst = false;
                             continue;
                         }
@@ -286,7 +286,7 @@ public class TypeStateBuilder {
             if (field.alt != null) {
                 method = MethodSpec.methodBuilder(field.name).returns(ClassName.get("", thisName));
                 method.addParameter(ParameterSpec
-                    .builder(TypeName.get(field.alt.type), field.alt.parameterName).build());
+                    .builder(TypeName.get(field.alt.type()), field.alt.parameterName()).build());
                 code = "return new " + thisName + "(";
                 isFirst = true;
                 for (int i = 0; i < enabled.length; i++) {
@@ -310,7 +310,7 @@ public class TypeStateBuilder {
                         code += ", ";
                     }
                     if (field_ == field) {
-                        code += field.alt.code;
+                        code += field.alt.code();
                     } else {
                         code += field_.name + "_";
                     }
@@ -319,150 +319,6 @@ public class TypeStateBuilder {
                 method.addCode(code + ");\n");
                 builder.addMethod(method.addModifiers(Modifier.PUBLIC).build());
             }
-        }
-    }
-
-    /** Base class for fields */
-    public static class Field {
-        /** Field type */
-        public final TypeMirror type;
-        /** Field name */
-        public final String name;
-
-        /** Base class for fields */
-        public Field(TypeMirror type, String name) {
-            this.type = type;
-            this.name = name;
-        }
-    }
-
-    /** Field that must be provided when creating a builder */
-    public static class InitField extends Field {
-        /** Field that must be provided when creating a builder */
-        public InitField(TypeMirror type, String name) {
-            super(type, name);
-        }
-    }
-
-    /** A non-init field */
-    public static class MethodField extends Field {
-        /** An alternative method for fulfilling this field. */
-        public final AltMethod alt;
-
-        /** A non-init field */
-        public MethodField(TypeMirror type, String name, AltMethod alt) {
-            super(type, name);
-            this.alt = alt;
-        }
-
-        /** A non-init field */
-        public MethodField(TypeMirror type, String name) {
-            this(type, name, null);
-        }
-    }
-
-    /** A field that is required to finish the builder. */
-    public static class RequiredField extends MethodField {
-
-        /** A field that is required to finish the builder. */
-        public RequiredField(TypeMirror type, String name, AltMethod alt) {
-            super(type, name, alt);
-        }
-
-        /** A field that is required to finish the builder. */
-        public RequiredField(TypeMirror type, String name) {
-            super(type, name);
-        }
-
-        /** A field that is required to finish the builder. */
-        public static RequiredField fromAnnotation(TypeMirror type, String name,
-            AnnotationMirror mirror) {
-            AltMethod alt = null;
-            for (var ev : mirror.getElementValues().entrySet()) {
-                if (ev.getKey().getSimpleName().toString().equals("alt")) {
-                    AnnotationMirror altMirror =
-                        ev.getValue().accept(new AnnotationMirrorVisitor(), null);
-                    alt = AltMethod.fromAnnotation(altMirror, name);
-                }
-            }
-            return new RequiredField(type, name, alt);
-        }
-    }
-
-    /** A field that has a default in case it is not specified. */
-    public static class OptionalField extends MethodField {
-        /** Java expression that provides the default value. */
-        public final String default_code;
-
-        /** A field that has a default in case it is not specified. */
-        public OptionalField(TypeMirror type, String name, AltMethod alt, String default_code) {
-            super(type, name, alt);
-            this.default_code = default_code;
-        }
-
-        /** A field that has a default in case it is not specified. */
-        public OptionalField(TypeMirror type, String name, String default_code) {
-            super(type, name);
-            this.default_code = default_code;
-        }
-
-        /** A field that has a default in case it is not specified. */
-        public static OptionalField fromAnnotation(TypeMirror type, String name,
-            AnnotationMirror mirror) {
-            String defaultCode = "";
-            AltMethod alt = null;
-            for (var ev : mirror.getElementValues().entrySet()) {
-                if (ev.getKey().getSimpleName().toString().equals("value")) {
-                    defaultCode = ev.getValue().accept(new StringVisitor(), null);
-                } else if (ev.getKey().getSimpleName().toString().equals("alt")) {
-                    AnnotationMirror altMirror =
-                        ev.getValue().accept(new AnnotationMirrorVisitor(), null);
-                    alt = AltMethod.fromAnnotation(altMirror, name);
-                }
-            }
-            return new OptionalField(type, name, alt, defaultCode);
-        }
-    }
-
-    /** Alternative method for a field. */
-    public static record AltMethod(TypeMirror type, String parameterName, String code) {
-        /** Alternative method for a field. */
-        public static AltMethod fromAnnotation(AnnotationMirror mirror, String defaultName) {
-            if (mirror == null) {
-                System.out.println("annotation is null");
-                return null;
-            }
-
-            if (!mirror.getAnnotationType().asElement().getSimpleName().toString()
-                .equals("AltMethod")) {
-                System.out.println("annotation name doesn't match "
-                    + mirror.getAnnotationType().asElement().getSimpleName().toString());
-                return null;
-            }
-            TypeMirror type = null;
-            String parameterName = defaultName;
-            String code = null;
-
-            for (var ev : mirror.getElementValues().entrySet()) {
-                if (ev.getKey().getSimpleName().toString().equals("type")) {
-                    type = ev.getValue().accept(new ClassVisitor(), null);
-                } else if (ev.getKey().getSimpleName().toString().equals("parameter_name")) {
-                    parameterName = ev.getValue().accept(new StringVisitor(), null);
-                } else if (ev.getKey().getSimpleName().toString().equals("value")) {
-                    code = ev.getValue().accept(new StringVisitor(), null);
-                }
-            }
-
-            if (type == null) {
-                System.out.println("Missing type");
-                return null;
-            }
-            if (code == null) {
-                System.out.println("Missing code");
-                return null;
-            }
-
-            return new AltMethod(type, parameterName, code);
         }
     }
 

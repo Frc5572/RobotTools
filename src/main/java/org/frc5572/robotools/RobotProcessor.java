@@ -9,19 +9,21 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
+import org.frc5572.robotools.binrw.BinrwGenerator;
 import org.frc5572.robotools.emptyio.GenerateEmptyIOGenerator;
 import org.frc5572.robotools.typestate.TypeStateBuilderGenerator;
 
 /**
  * Annotation processor for checks. Used by VS Code.
  */
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
+@SupportedSourceVersion(SourceVersion.RELEASE_17)
 public class RobotProcessor extends AbstractProcessor {
 
     private AnnotationGenerator[] generators = new AnnotationGenerator[] {
         // @formatter:off
-        new GenerateEmptyIOGenerator(), 
+        new GenerateEmptyIOGenerator(),
         new TypeStateBuilderGenerator(),
+        new BinrwGenerator(),
         // @formatter:on
     };
 

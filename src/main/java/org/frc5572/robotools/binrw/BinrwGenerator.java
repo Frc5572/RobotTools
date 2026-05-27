@@ -445,6 +445,8 @@ public class BinrwGenerator implements AnnotationGenerator {
                     case "java.lang.String":
                         return CodeBlock.builder()
                             .addStatement("$L.writeUTF($L)", streamVar, valueExpr).build();
+                    default:
+                        break;
                 }
                 if (isMeasureType(typeElement)) {
                     return CodeBlock.builder().addStatement(
@@ -539,9 +541,9 @@ public class BinrwGenerator implements AnnotationGenerator {
      * {@code null} if it cannot be determined.
      *
      * <p>
-     * For the generic {@code Measure<U>} interface, {@code U} is the direct type argument. For
+     * For the generic {@code Measure} interface, {@code U} is the direct type argument. For
      * concrete types in {@code edu.wpi.first.units.measure.*}, the unit type is found by inspecting
-     * the {@code Measure<U>} superinterface.
+     * the {@code Measure} superinterface.
      */
     private TypeElement getUnitTypeElement(DeclaredType measureDeclaredType,
         TypeElement measureTypeElement) {

@@ -537,7 +537,7 @@ public class BinrwGenerator implements AnnotationGenerator {
     }
 
     /**
-     * Gets the {@code Unit} {@link TypeElement} from a {@code Measure<U>} declared type, or
+     * Gets the {@code Unit} {@link TypeElement} from a {@code Measure} declared type, or
      * {@code null} if it cannot be determined.
      *
      * <p>

@@ -40,7 +40,8 @@ import com.squareup.javapoet.TypeSpec;
 public class BinrwGenerator implements AnnotationGenerator {
 
     /** Holds per-field metadata normalized across classes and records. */
-    private record FieldInfo(TypeMirror type, String localName, String writeExpr) {}
+    private record FieldInfo(TypeMirror type, String localName, String writeExpr) {
+    }
 
     private ProcessingEnvironment processingEnv;
 
@@ -77,8 +78,7 @@ public class BinrwGenerator implements AnnotationGenerator {
                 }
             }
 
-            List<FieldInfo> fields =
-                implClass == null ? collectFields(classElement) : List.of();
+            List<FieldInfo> fields = implClass == null ? collectFields(classElement) : List.of();
 
             generateReader(pkg, name, classElement, fields, implClass);
             generateWriter(pkg, name, classElement, fields, implClass);
@@ -89,16 +89,16 @@ public class BinrwGenerator implements AnnotationGenerator {
      * Collects the fields/components to serialize, normalized to {@link FieldInfo}.
      *
      * <p>
-     * For records, components are read via their accessor methods ({@code obj.name()}). For classes,
-     * public non-static non-final fields are accessed directly ({@code obj.name}).
+     * For records, components are read via their accessor methods ({@code obj.name()}). For
+     * classes, public non-static non-final fields are accessed directly ({@code obj.name}).
      */
     private List<FieldInfo> collectFields(TypeElement classElement) {
         List<FieldInfo> result = new ArrayList<>();
         if (classElement.getKind() == ElementKind.RECORD) {
             for (var comp : classElement.getRecordComponents()) {
-                boolean ignored = comp.getAnnotationMirrors().stream()
-                    .anyMatch(m -> m.getAnnotationType().asElement().getSimpleName().toString()
-                        .equals("BrwIgnore"));
+                boolean ignored =
+                    comp.getAnnotationMirrors().stream().anyMatch(m -> m.getAnnotationType()
+                        .asElement().getSimpleName().toString().equals("BrwIgnore"));
                 if (ignored) {
                     continue;
                 }
@@ -119,8 +119,7 @@ public class BinrwGenerator implements AnnotationGenerator {
                 }
                 if (mods.contains(Modifier.FINAL)) {
                     processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING,
-                        "Skipping final field '" + enclosed.getSimpleName()
-                            + "' in @Binrw class",
+                        "Skipping final field '" + enclosed.getSimpleName() + "' in @Binrw class",
                         enclosed);
                     continue;
                 }
@@ -131,9 +130,9 @@ public class BinrwGenerator implements AnnotationGenerator {
                         enclosed);
                     continue;
                 }
-                boolean ignored = enclosed.getAnnotationMirrors().stream()
-                    .anyMatch(m -> m.getAnnotationType().asElement().getSimpleName().toString()
-                        .equals("BrwIgnore"));
+                boolean ignored =
+                    enclosed.getAnnotationMirrors().stream().anyMatch(m -> m.getAnnotationType()
+                        .asElement().getSimpleName().toString().equals("BrwIgnore"));
                 if (ignored) {
                     continue;
                 }
@@ -160,8 +159,7 @@ public class BinrwGenerator implements AnnotationGenerator {
                 localNames.add(field.localName());
                 readMethod.addCode(buildReadBlock(field.type(), "stream", field.localName(), 0));
             }
-            readMethod.addStatement("return new $T($L)", classType,
-                String.join(", ", localNames));
+            readMethod.addStatement("return new $T($L)", classType, String.join(", ", localNames));
         }
 
         TypeSpec readerClass = TypeSpec.classBuilder(name + "Reader")
@@ -188,8 +186,7 @@ public class BinrwGenerator implements AnnotationGenerator {
             writeMethod.addStatement("$T.write(stream, obj)", TypeName.get(implClass));
         } else {
             for (var field : fields) {
-                writeMethod.addCode(
-                    buildWriteBlock(field.type(), "stream", field.writeExpr(), 0));
+                writeMethod.addCode(buildWriteBlock(field.type(), "stream", field.writeExpr(), 0));
             }
         }
 
@@ -216,10 +213,8 @@ public class BinrwGenerator implements AnnotationGenerator {
                     .addStatement("$T $L = $L.readByte()", TypeName.get(type), localName, streamVar)
                     .build();
             case SHORT:
-                return CodeBlock.builder()
-                    .addStatement("$T $L = $L.readShort()", TypeName.get(type), localName,
-                        streamVar)
-                    .build();
+                return CodeBlock.builder().addStatement("$T $L = $L.readShort()",
+                    TypeName.get(type), localName, streamVar).build();
             case INT:
                 return CodeBlock.builder()
                     .addStatement("$T $L = $L.readInt()", TypeName.get(type), localName, streamVar)
@@ -229,20 +224,14 @@ public class BinrwGenerator implements AnnotationGenerator {
                     .addStatement("$T $L = $L.readLong()", TypeName.get(type), localName, streamVar)
                     .build();
             case FLOAT:
-                return CodeBlock.builder()
-                    .addStatement("$T $L = $L.readFloat()", TypeName.get(type), localName,
-                        streamVar)
-                    .build();
+                return CodeBlock.builder().addStatement("$T $L = $L.readFloat()",
+                    TypeName.get(type), localName, streamVar).build();
             case DOUBLE:
-                return CodeBlock.builder()
-                    .addStatement("$T $L = $L.readDouble()", TypeName.get(type), localName,
-                        streamVar)
-                    .build();
+                return CodeBlock.builder().addStatement("$T $L = $L.readDouble()",
+                    TypeName.get(type), localName, streamVar).build();
             case BOOLEAN:
-                return CodeBlock.builder()
-                    .addStatement("$T $L = $L.readBoolean()", TypeName.get(type), localName,
-                        streamVar)
-                    .build();
+                return CodeBlock.builder().addStatement("$T $L = $L.readBoolean()",
+                    TypeName.get(type), localName, streamVar).build();
             case CHAR:
                 return CodeBlock.builder()
                     .addStatement("$T $L = $L.readChar()", TypeName.get(type), localName, streamVar)
@@ -269,59 +258,43 @@ public class BinrwGenerator implements AnnotationGenerator {
                 return cb.build();
             }
             case DECLARED: {
-                DeclaredType dt = (DeclaredType) type;
-                TypeElement te = (TypeElement) dt.asElement();
-                String qname = te.getQualifiedName().toString();
+                DeclaredType declaredType = (DeclaredType) type;
+                TypeElement typeElement = (TypeElement) declaredType.asElement();
+                String qname = typeElement.getQualifiedName().toString();
                 switch (qname) {
                     case "java.lang.Byte":
-                        return CodeBlock.builder()
-                            .addStatement("$T $L = $L.readByte()", TypeName.get(type), localName,
-                                streamVar)
-                            .build();
+                        return CodeBlock.builder().addStatement("$T $L = $L.readByte()",
+                            TypeName.get(type), localName, streamVar).build();
                     case "java.lang.Short":
-                        return CodeBlock.builder()
-                            .addStatement("$T $L = $L.readShort()", TypeName.get(type), localName,
-                                streamVar)
-                            .build();
+                        return CodeBlock.builder().addStatement("$T $L = $L.readShort()",
+                            TypeName.get(type), localName, streamVar).build();
                     case "java.lang.Integer":
-                        return CodeBlock.builder()
-                            .addStatement("$T $L = $L.readInt()", TypeName.get(type), localName,
-                                streamVar)
-                            .build();
+                        return CodeBlock.builder().addStatement("$T $L = $L.readInt()",
+                            TypeName.get(type), localName, streamVar).build();
                     case "java.lang.Long":
-                        return CodeBlock.builder()
-                            .addStatement("$T $L = $L.readLong()", TypeName.get(type), localName,
-                                streamVar)
-                            .build();
+                        return CodeBlock.builder().addStatement("$T $L = $L.readLong()",
+                            TypeName.get(type), localName, streamVar).build();
                     case "java.lang.Float":
-                        return CodeBlock.builder()
-                            .addStatement("$T $L = $L.readFloat()", TypeName.get(type), localName,
-                                streamVar)
-                            .build();
+                        return CodeBlock.builder().addStatement("$T $L = $L.readFloat()",
+                            TypeName.get(type), localName, streamVar).build();
                     case "java.lang.Double":
-                        return CodeBlock.builder()
-                            .addStatement("$T $L = $L.readDouble()", TypeName.get(type), localName,
-                                streamVar)
-                            .build();
+                        return CodeBlock.builder().addStatement("$T $L = $L.readDouble()",
+                            TypeName.get(type), localName, streamVar).build();
                     case "java.lang.Boolean":
-                        return CodeBlock.builder()
-                            .addStatement("$T $L = $L.readBoolean()", TypeName.get(type), localName,
-                                streamVar)
-                            .build();
+                        return CodeBlock.builder().addStatement("$T $L = $L.readBoolean()",
+                            TypeName.get(type), localName, streamVar).build();
                     case "java.lang.Character":
-                        return CodeBlock.builder()
-                            .addStatement("$T $L = $L.readChar()", TypeName.get(type), localName,
-                                streamVar)
-                            .build();
+                        return CodeBlock.builder().addStatement("$T $L = $L.readChar()",
+                            TypeName.get(type), localName, streamVar).build();
                     case "java.lang.String":
-                        return CodeBlock.builder()
-                            .addStatement("$T $L = $L.readUTF()", TypeName.get(type), localName,
-                                streamVar)
-                            .build();
+                        return CodeBlock.builder().addStatement("$T $L = $L.readUTF()",
+                            TypeName.get(type), localName, streamVar).build();
+                    default:
+                        break;
                 }
-                if (isMeasureType(te)) {
-                    TypeElement unitTe = getUnitTypeElement(dt, te);
-                    if (unitTe == null) {
+                if (isMeasureType(typeElement)) {
+                    TypeElement unitTypeElement = getUnitTypeElement(declaredType, typeElement);
+                    if (unitTypeElement == null) {
                         processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
                             "Cannot determine unit type for @Binrw Measure field: " + type
                                 + ". Use a concrete type from edu.wpi.first.units.measure.*"
@@ -330,11 +303,12 @@ public class BinrwGenerator implements AnnotationGenerator {
                     }
                     return CodeBlock.builder()
                         .addStatement("$T $L = ($T) $L.of($L.readDouble())", TypeName.get(type),
-                            localName, TypeName.get(type), buildUnitExpr(unitTe), streamVar)
+                            localName, TypeName.get(type), buildUnitExpr(unitTypeElement),
+                            streamVar)
                         .build();
                 }
-                if (isListType(te)) {
-                    List<? extends TypeMirror> args = dt.getTypeArguments();
+                if (isListType(typeElement)) {
+                    List<? extends TypeMirror> args = declaredType.getTypeArguments();
                     TypeMirror elemType = args.isEmpty() ? null : args.get(0);
                     String lenVar = localName + "_len";
                     String iVar = localName + "_i";
@@ -352,8 +326,8 @@ public class BinrwGenerator implements AnnotationGenerator {
                     }
                     return cb.build();
                 }
-                if (isMapType(te)) {
-                    List<? extends TypeMirror> args = dt.getTypeArguments();
+                if (isMapType(typeElement)) {
+                    List<? extends TypeMirror> args = declaredType.getTypeArguments();
                     TypeMirror keyType = args.size() > 0 ? args.get(0) : null;
                     TypeMirror valType = args.size() > 1 ? args.get(1) : null;
                     String lenVar = localName + "_len";
@@ -374,14 +348,12 @@ public class BinrwGenerator implements AnnotationGenerator {
                     }
                     return cb.build();
                 }
-                if (isBinrwType(te)) {
-                    String tePkg = Utilities.getPackageName(te);
+                if (isBinrwType(typeElement)) {
+                    String typeElementPkg = Utilities.getPackageName(typeElement);
                     ClassName readerClass =
-                        ClassName.get(tePkg, te.getSimpleName() + "Reader");
-                    return CodeBlock.builder()
-                        .addStatement("$T $L = $T.read($L)", TypeName.get(type), localName,
-                            readerClass, streamVar)
-                        .build();
+                        ClassName.get(typeElementPkg, typeElement.getSimpleName() + "Reader");
+                    return CodeBlock.builder().addStatement("$T $L = $T.read($L)",
+                        TypeName.get(type), localName, readerClass, streamVar).build();
                 }
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
                     "Unsupported field type for @Binrw: " + type);
@@ -401,29 +373,29 @@ public class BinrwGenerator implements AnnotationGenerator {
         int depth) {
         switch (type.getKind()) {
             case BYTE:
-                return CodeBlock.builder()
-                    .addStatement("$L.writeByte($L)", streamVar, valueExpr).build();
+                return CodeBlock.builder().addStatement("$L.writeByte($L)", streamVar, valueExpr)
+                    .build();
             case SHORT:
-                return CodeBlock.builder()
-                    .addStatement("$L.writeShort($L)", streamVar, valueExpr).build();
+                return CodeBlock.builder().addStatement("$L.writeShort($L)", streamVar, valueExpr)
+                    .build();
             case INT:
-                return CodeBlock.builder()
-                    .addStatement("$L.writeInt($L)", streamVar, valueExpr).build();
+                return CodeBlock.builder().addStatement("$L.writeInt($L)", streamVar, valueExpr)
+                    .build();
             case LONG:
-                return CodeBlock.builder()
-                    .addStatement("$L.writeLong($L)", streamVar, valueExpr).build();
+                return CodeBlock.builder().addStatement("$L.writeLong($L)", streamVar, valueExpr)
+                    .build();
             case FLOAT:
-                return CodeBlock.builder()
-                    .addStatement("$L.writeFloat($L)", streamVar, valueExpr).build();
+                return CodeBlock.builder().addStatement("$L.writeFloat($L)", streamVar, valueExpr)
+                    .build();
             case DOUBLE:
-                return CodeBlock.builder()
-                    .addStatement("$L.writeDouble($L)", streamVar, valueExpr).build();
+                return CodeBlock.builder().addStatement("$L.writeDouble($L)", streamVar, valueExpr)
+                    .build();
             case BOOLEAN:
-                return CodeBlock.builder()
-                    .addStatement("$L.writeBoolean($L)", streamVar, valueExpr).build();
+                return CodeBlock.builder().addStatement("$L.writeBoolean($L)", streamVar, valueExpr)
+                    .build();
             case CHAR:
-                return CodeBlock.builder()
-                    .addStatement("$L.writeChar($L)", streamVar, valueExpr).build();
+                return CodeBlock.builder().addStatement("$L.writeChar($L)", streamVar, valueExpr)
+                    .build();
             case ARRAY: {
                 ArrayType at = (ArrayType) type;
                 TypeMirror comp = at.getComponentType();
@@ -435,16 +407,16 @@ public class BinrwGenerator implements AnnotationGenerator {
                 String iVar = "wri" + depth + "_i";
                 CodeBlock.Builder cb = CodeBlock.builder();
                 cb.addStatement("$L.writeInt($L.length)", streamVar, valueExpr);
-                cb.beginControlFlow("for (int $L = 0; $L < $L.length; $L++)", iVar, iVar,
-                    valueExpr, iVar);
+                cb.beginControlFlow("for (int $L = 0; $L < $L.length; $L++)", iVar, iVar, valueExpr,
+                    iVar);
                 cb.add(buildWriteBlock(comp, streamVar, valueExpr + "[" + iVar + "]", depth + 1));
                 cb.endControlFlow();
                 return cb.build();
             }
             case DECLARED: {
-                DeclaredType dt = (DeclaredType) type;
-                TypeElement te = (TypeElement) dt.asElement();
-                String qname = te.getQualifiedName().toString();
+                DeclaredType declaredType = (DeclaredType) type;
+                TypeElement typeElement = (TypeElement) declaredType.asElement();
+                String qname = typeElement.getQualifiedName().toString();
                 switch (qname) {
                     case "java.lang.Byte":
                         return CodeBlock.builder()
@@ -474,14 +446,12 @@ public class BinrwGenerator implements AnnotationGenerator {
                         return CodeBlock.builder()
                             .addStatement("$L.writeUTF($L)", streamVar, valueExpr).build();
                 }
-                if (isMeasureType(te)) {
-                    return CodeBlock.builder()
-                        .addStatement("$L.writeDouble($L.baseUnitMagnitude())", streamVar,
-                            valueExpr)
-                        .build();
+                if (isMeasureType(typeElement)) {
+                    return CodeBlock.builder().addStatement(
+                        "$L.writeDouble($L.baseUnitMagnitude())", streamVar, valueExpr).build();
                 }
-                if (isListType(te)) {
-                    List<? extends TypeMirror> args = dt.getTypeArguments();
+                if (isListType(typeElement)) {
+                    List<? extends TypeMirror> args = declaredType.getTypeArguments();
                     TypeMirror elemType = args.isEmpty() ? null : args.get(0);
                     String elemVar = "wri" + depth + "_elem";
                     CodeBlock.Builder cb = CodeBlock.builder();
@@ -494,31 +464,31 @@ public class BinrwGenerator implements AnnotationGenerator {
                     }
                     return cb.build();
                 }
-                if (isMapType(te)) {
-                    List<? extends TypeMirror> args = dt.getTypeArguments();
+                if (isMapType(typeElement)) {
+                    List<? extends TypeMirror> args = declaredType.getTypeArguments();
                     TypeMirror keyType = args.size() > 0 ? args.get(0) : null;
                     TypeMirror valType = args.size() > 1 ? args.get(1) : null;
                     String entryVar = "wri" + depth + "_entry";
                     CodeBlock.Builder cb = CodeBlock.builder();
                     cb.addStatement("$L.writeInt($L.size())", streamVar, valueExpr);
                     if (keyType != null && valType != null) {
-                        ParameterizedTypeName entryType = ParameterizedTypeName.get(
-                            ClassName.get(Map.Entry.class), TypeName.get(keyType).box(),
-                            TypeName.get(valType).box());
+                        ParameterizedTypeName entryType =
+                            ParameterizedTypeName.get(ClassName.get(Map.Entry.class),
+                                TypeName.get(keyType).box(), TypeName.get(valType).box());
                         cb.beginControlFlow("for ($T $L : $L.entrySet())", entryType, entryVar,
                             valueExpr);
-                        cb.add(buildWriteBlock(keyType, streamVar, entryVar + ".getKey()",
-                            depth + 1));
+                        cb.add(
+                            buildWriteBlock(keyType, streamVar, entryVar + ".getKey()", depth + 1));
                         cb.add(buildWriteBlock(valType, streamVar, entryVar + ".getValue()",
                             depth + 1));
                         cb.endControlFlow();
                     }
                     return cb.build();
                 }
-                if (isBinrwType(te)) {
-                    String tePkg = Utilities.getPackageName(te);
+                if (isBinrwType(typeElement)) {
+                    String tePkg = Utilities.getPackageName(typeElement);
                     ClassName writerClass =
-                        ClassName.get(tePkg, te.getSimpleName() + "Writer");
+                        ClassName.get(tePkg, typeElement.getSimpleName() + "Writer");
                     return CodeBlock.builder()
                         .addStatement("$T.write($L, $L)", writerClass, streamVar, valueExpr)
                         .build();
@@ -534,35 +504,33 @@ public class BinrwGenerator implements AnnotationGenerator {
         }
     }
 
-    private boolean isListType(TypeElement te) {
-        TypeElement listElement =
-            processingEnv.getElementUtils().getTypeElement("java.util.List");
+    private boolean isListType(TypeElement typeElement) {
+        TypeElement listElement = processingEnv.getElementUtils().getTypeElement("java.util.List");
         TypeMirror listErasure = processingEnv.getTypeUtils().erasure(listElement.asType());
-        TypeMirror teErasure = processingEnv.getTypeUtils().erasure(te.asType());
+        TypeMirror teErasure = processingEnv.getTypeUtils().erasure(typeElement.asType());
         return processingEnv.getTypeUtils().isAssignable(teErasure, listErasure);
     }
 
-    private boolean isMapType(TypeElement te) {
-        TypeElement mapElement =
-            processingEnv.getElementUtils().getTypeElement("java.util.Map");
+    private boolean isMapType(TypeElement typeElement) {
+        TypeElement mapElement = processingEnv.getElementUtils().getTypeElement("java.util.Map");
         TypeMirror mapErasure = processingEnv.getTypeUtils().erasure(mapElement.asType());
-        TypeMirror teErasure = processingEnv.getTypeUtils().erasure(te.asType());
+        TypeMirror teErasure = processingEnv.getTypeUtils().erasure(typeElement.asType());
         return processingEnv.getTypeUtils().isAssignable(teErasure, mapErasure);
     }
 
-    private boolean isBinrwType(TypeElement te) {
-        return te.getAnnotationMirrors().stream().anyMatch(
+    private boolean isBinrwType(TypeElement typeElement) {
+        return typeElement.getAnnotationMirrors().stream().anyMatch(
             m -> m.getAnnotationType().asElement().getSimpleName().toString().equals("Binrw"));
     }
 
-    private boolean isMeasureType(TypeElement te) {
+    private boolean isMeasureType(TypeElement typeElement) {
         TypeElement measureElement =
             processingEnv.getElementUtils().getTypeElement("edu.wpi.first.units.Measure");
         if (measureElement == null) {
             return false;
         }
         TypeMirror measureErasure = processingEnv.getTypeUtils().erasure(measureElement.asType());
-        TypeMirror teErasure = processingEnv.getTypeUtils().erasure(te.asType());
+        TypeMirror teErasure = processingEnv.getTypeUtils().erasure(typeElement.asType());
         return processingEnv.getTypeUtils().isAssignable(teErasure, measureErasure);
     }
 
@@ -575,23 +543,26 @@ public class BinrwGenerator implements AnnotationGenerator {
      * concrete types in {@code edu.wpi.first.units.measure.*}, the unit type is found by inspecting
      * the {@code Measure<U>} superinterface.
      */
-    private TypeElement getUnitTypeElement(DeclaredType measureDt, TypeElement measureTe) {
-        if ("edu.wpi.first.units.Measure".equals(measureTe.getQualifiedName().toString())) {
-            List<? extends TypeMirror> args = measureDt.getTypeArguments();
-            if (!args.isEmpty() && args.get(0) instanceof DeclaredType udt) {
-                return (TypeElement) udt.asElement();
+    private TypeElement getUnitTypeElement(DeclaredType measureDeclaredType,
+        TypeElement measureTypeElement) {
+        if ("edu.wpi.first.units.Measure"
+            .equals(measureTypeElement.getQualifiedName().toString())) {
+            List<? extends TypeMirror> args = measureDeclaredType.getTypeArguments();
+            if (!args.isEmpty() && args.get(0) instanceof DeclaredType uDeclaredType) {
+                return (TypeElement) uDeclaredType.asElement();
             }
             return null;
         }
-        for (TypeMirror iface : measureTe.getInterfaces()) {
-            if (!(iface instanceof DeclaredType ifaceDt)) {
+        for (TypeMirror iface : measureTypeElement.getInterfaces()) {
+            if (!(iface instanceof DeclaredType ifaceDeclaredType)) {
                 continue;
             }
-            TypeElement ifaceTe = (TypeElement) ifaceDt.asElement();
-            if ("edu.wpi.first.units.Measure".equals(ifaceTe.getQualifiedName().toString())) {
-                List<? extends TypeMirror> args = ifaceDt.getTypeArguments();
-                if (!args.isEmpty() && args.get(0) instanceof DeclaredType udt) {
-                    return (TypeElement) udt.asElement();
+            TypeElement ifaceTypeElement = (TypeElement) ifaceDeclaredType.asElement();
+            if ("edu.wpi.first.units.Measure"
+                .equals(ifaceTypeElement.getQualifiedName().toString())) {
+                List<? extends TypeMirror> args = ifaceDeclaredType.getTypeArguments();
+                if (!args.isEmpty() && args.get(0) instanceof DeclaredType uDeclaredType) {
+                    return (TypeElement) uDeclaredType.asElement();
                 }
             }
         }
@@ -613,11 +584,11 @@ public class BinrwGenerator implements AnnotationGenerator {
             processingEnv.getElementUtils().getTypeElement("edu.wpi.first.units.PerUnit");
         if (perUnitElement != null) {
             TypeMirror superClass = unitType.getSuperclass();
-            if (superClass instanceof DeclaredType superDt) {
-                TypeElement superTe = (TypeElement) superDt.asElement();
+            if (superClass instanceof DeclaredType superDeclaredType) {
+                TypeElement superTypeElement = (TypeElement) superDeclaredType.asElement();
                 if ("edu.wpi.first.units.PerUnit"
-                    .equals(superTe.getQualifiedName().toString())) {
-                    List<? extends TypeMirror> args = superDt.getTypeArguments();
+                    .equals(superTypeElement.getQualifiedName().toString())) {
+                    List<? extends TypeMirror> args = superDeclaredType.getTypeArguments();
                     if (args.size() >= 2 && args.get(0) instanceof DeclaredType numDt
                         && args.get(1) instanceof DeclaredType denDt) {
                         CodeBlock numExpr = buildUnitExpr((TypeElement) numDt.asElement());

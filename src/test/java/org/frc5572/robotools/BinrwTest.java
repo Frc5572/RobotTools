@@ -379,7 +379,10 @@ public class BinrwTest {
             .contains("BaseUnits.DistanceUnit.of(");
     }
 
-    /** Compound unit Measure fields (AngularVelocity) use per() chaining, not a direct BaseUnits field. */
+    /**
+     * Compound unit Measure fields (AngularVelocity) use per() chaining, not a direct BaseUnits
+     * field.
+     */
     @Test
     public void wpilibCompoundUnitMeasureField() {
         // @formatter:off
@@ -404,7 +407,7 @@ public class BinrwTest {
             .contains("(AngularVelocity) BaseUnits.AngleUnit.per(BaseUnits.TimeUnit).of(");
     }
 
-    /** @Binrw(Impl.class) delegates to static methods on the provided class. */
+    /** {@code @Binrw(Impl.class)} delegates to static methods on the provided class. */
     @Test
     public void implClassDelegation() {
         // @formatter:off

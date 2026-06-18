@@ -11,6 +11,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import org.frc5572.robotools.binrw.BinrwGenerator;
 import org.frc5572.robotools.emptyio.GenerateEmptyIOGenerator;
+import org.frc5572.robotools.tunable.TunableGenerator;
 import org.frc5572.robotools.typestate.TypeStateBuilderGenerator;
 
 /**
@@ -24,6 +25,7 @@ public class RobotProcessor extends AbstractProcessor {
         new GenerateEmptyIOGenerator(),
         new TypeStateBuilderGenerator(),
         new BinrwGenerator(),
+        new TunableGenerator(),
         // @formatter:on
     };
 
